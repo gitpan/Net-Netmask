@@ -17,6 +17,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	print $block->maxblock()
 	print $block->broadcast()
 	print $block->next()
+	print $block->match($ip);
+	print $block->nth(1);
 
 	for $ip ($block->enumerate()) { }
 
@@ -118,6 +120,20 @@ block.) Eg: 192.168.1.0/24 => 192.168.1.255
 The first IP address following the block. (The IP address following
 the broadcase address.) Eg: 192.168.1.0/24 => 192.168.2.0
 
+=item B<match>($ip)
+
+Returns TRUE if the IP number $ip matches the given network. That
+is, TRUE is returned if $ip is between base() amd broadcast().
+For example, if we have the network 192.168.1.0/24, then
+
+  192.168.0.255 => FALSE
+  192.168.1.0   => TRUE
+  192.168.1.1   => TRUE
+  ...
+  192.168.1.255 => TRUE
+
+$ip should be a dotted-quad (eg: "192.168.66.3")
+
 =item B<maxblock>()
 
 Much of the time, it is not possible to determine the size
@@ -135,6 +151,13 @@ Returns a list of all the IP addresses in the block.  Be very
 careful not to use this function of large blocks.  The IP
 addresses are returned as strings.  Eg: '140.174.82.0', '140.174.82.1',
 ... '140.174.82.255'.
+
+=item B<nth>($index)
+
+Returns the nth element of the array that B<enumerate> would return
+if it were called.  So, to get the first usable address in a block,
+use B<nth>(1).  To get the broadcast address, use B<nth>(-1).  To
+get the last usable adress, use B<nth>(-2).
 
 =item B<inaddr>()
 

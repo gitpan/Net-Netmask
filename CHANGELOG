@@ -1,0 +1,17 @@
+
+= 1999/03/27
+
+Jochen Wiedmann <joe@ispsoft.de> contributed a function to test an IP
+address and a block to test see if the IP address is in the block. 
+Accordingly, there is now a match() method.
+
+Rob Walker <rob@varesearch.com> contributed a function to return the
+first usable adress in a block.  Instead of using that, I added a function
+to return the nth address in a block.  There is now an nth() function.
+
+= 1998/11/29
+
+Jean-Luc Szpyrka <Jean-Luc.Szpyrka@sophia.inria.fr> requested that a
+function be provided that returns the oposite of a netmask.  Accordingly,
+there is now the hostmask() method.
+

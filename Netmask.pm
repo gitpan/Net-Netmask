@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.4;
+$VERSION = 1.6;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -90,9 +90,17 @@ sub base { my ($this) = @_; return int2quad($this->{'IBASE'}); }
 sub bits { my ($this) = @_; return $this->{'BITS'}; }
 sub size { my ($this) = @_; return 2**(32- $this->{'BITS'}); }
 sub next { my ($this) = @_; int2quad($this->{'IBASE'} + $this->size()); }
+
+sub match {
+	my $this = shift;
+	my $ibase = quad2int(shift);
+	return ($this->{'IBASE'} <= $ibase 
+		and $ibase < ($this->{'IBASE'} + $this->size()));
+}
+
 sub broadcast {
-    my($this) = @_;
-    int2quad($this->{'IBASE'} + $this->size() - 1);
+	my($this) = @_;
+	int2quad($this->{'IBASE'} + $this->size() - 1);
 }
 
 sub desc 
@@ -118,6 +126,17 @@ sub hostmask
 	my ($this) = @_;
 
 	return int2quad ( ~ imask ($this->{'BITS'}));
+}
+
+sub nth
+{
+	my ($this, $index) = @_;
+	my $size = $this->size();
+	my $ibase = $this->{'IBASE'};
+	$index += $size if $index < 0;
+	return undef if $index < 0;
+	return undef if $index >= $size;
+	return int2quad($ibase+$index);
 }
 
 sub enumerate

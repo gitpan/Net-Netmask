@@ -1,3 +1,4 @@
+#!/usr/local/bin/perl -I. -w
 
 use Net::Netmask;
 
@@ -44,7 +45,7 @@ my @lookup2 = qw(
  209.157.81.14	209.157.64.0/19
 );
 
-printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1
+printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 4
 	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 2;
 
 my $debug = 0;
@@ -107,6 +108,12 @@ print $y[0] eq '209.157.64.0' ? "ok $test\n" : "not ok $test\n"; $test++;
 print $y[31] eq '209.157.64.31' ? "ok $test\n" : "not ok $test\n"; $test++;
 print defined($y[32]) ? "not ok $test\n" : "ok $test\n"; $test++;
 
+$x = new Net::Netmask ('10.2.0.16/19');
+@y = $x->enumerate();
+print $y[0] eq '10.2.0.0' ? "ok $test\n" : "not ok $test\n"; $test++;
+print $y[8191] eq '10.2.31.255' ? "ok $test\n" : "not ok $test\n"; $test++;
+print defined($y[8192]) ? "not ok $test\n" : "ok $test\n"; $test++;
+
 my $table = {};
 
 for my $b (@store) {
@@ -138,3 +145,16 @@ while (($addr, $result) = splice(@lookup2, 0, 2)) {
 $newmask = Net::Netmask->new("192.168.1.0/24");
 print (($newmask->broadcast() eq "192.168.1.255") ? "ok $test\n" : "not ok $test\n"); $test++;
 print (($newmask->next() eq "192.168.2.0") ? "ok $test\n" : "not ok $test\n"); $test++;
+print ($newmask->match("192.168.0.255") ? "not ok $test\n" : "ok $test\n"); $test++;
+print ($newmask->match("192.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
+print ($newmask->match("10.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
+print ($newmask->match("209.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
+print ($newmask->match("192.168.1.0") ? "ok $test\n" : "not ok $test\n"); $test++;
+print ($newmask->match("192.168.1.255") ? "ok $test\n" : "not ok $test\n"); $test++;
+print ($newmask->match("192.168.1.63") ? "ok $test\n" : "not ok $test\n"); $test++;
+
+print (($newmask->nth(1) eq '192.168.1.1') ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->nth(-1) eq '192.168.1.255') ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->nth(-2) eq '192.168.1.254') ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->nth(0) eq '192.168.1.0') ? "ok $test\n" : "not ok $test\n"); $test++;
+

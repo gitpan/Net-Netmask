@@ -15,6 +15,8 @@ SYNOPSIS
             print $block->maxblock()
             print $block->broadcast()
             print $block->next()
+            print $block->match($ip);
+            print $block->nth(1);
 
             for $ip ($block->enumerate()) { }
 
@@ -81,6 +83,20 @@ METHODS
                              address following the broadcase address.) Eg:
                              192.168.1.0/24 => 192.168.2.0
 
+    match($ip)               Returns TRUE if the IP number $ip matches the given
+                             network. That is, TRUE is returned if $ip is
+                             between base() amd broadcast(). For example, if
+                             we have the network 192.168.1.0/24, then
+
+                               192.168.0.255 => FALSE
+                               192.168.1.0   => TRUE
+                               192.168.1.1   => TRUE
+                               ...
+                               192.168.1.255 => TRUE
+
+                             $ip should be a dotted-quad (eg:
+                             "192.168.66.3")
+
     maxblock()               Much of the time, it is not possible to determine
                              the size of a network block just from it's base
                              address. For example, with the network block
@@ -98,6 +114,12 @@ METHODS
                              of large blocks. The IP addresses are returned
                              as strings. Eg: '140.174.82.0', '140.174.82.1',
                              ... '140.174.82.255'.
+
+    nth($index)              Returns the nth element of the array that enumerate
+                             would return if it were called. So, to get the
+                             first usable address in a block, use nth(1). To
+                             get the broadcast address, use nth(-1). To get
+                             the last usable adress, use nth(-2).
 
     inaddr()                 Returns an inline list of tuples. There is a tuple
                              for each DNS zone name in the block. If the

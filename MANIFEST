@@ -3,4 +3,5 @@ Netmask.pod
 Makefile.PL
 MANIFEST
 README
+CHANGELOG
 t/netmasks.t
