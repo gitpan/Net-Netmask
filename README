@@ -9,6 +9,7 @@ SYNOPSIS
 
             print $block->base() 
             print $block->mask() 
+            print $block->hostmask() 
             print $block->bits() 
             print $block->size() 
             print $block->maxblock()
@@ -61,6 +62,9 @@ METHODS
                              indication of the size of the network block.
 
     mask()                   Returns the netmask as a string. Eg: 255.255.255.0.
+
+    hostmask()               Returns the host mask which is the oposite of the
+                             netmask. Eg: 0.0.0.255.
 
     bits()                   Returns the netmask as a number of bits in the
                              network portion of the address for this block.

@@ -6,7 +6,10 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
 	'NAME' => 'Net::Netmask',
 	'DISTNAME' => 'Net-Netmask',
-	'VERSION' => '1.3',
+	'VERSION_FROM' => 'Netmask.pm',
+	($] >= 5.005 ?
+	    ('ABSTRACT' => 'Understand and manipulate IP netmaks',
+	     'AUTHOR'	=> 'David Muir Sharnoff <muir@idiom.com>') : ()),
 	'dist'   => {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );
 

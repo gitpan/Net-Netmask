@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.3;
+$VERSION = 1.4;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -111,6 +111,13 @@ sub mask
 	my ($this) = @_;
 
 	return int2quad ( imask ($this->{'BITS'}));
+}
+
+sub hostmask
+{
+	my ($this) = @_;
+
+	return int2quad ( ~ imask ($this->{'BITS'}));
 }
 
 sub enumerate

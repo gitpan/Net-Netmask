@@ -44,7 +44,7 @@ my @lookup2 = qw(
  209.157.81.14	209.157.64.0/19
 );
 
-printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6
+printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1
 	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 2;
 
 my $debug = 0;
@@ -70,6 +70,8 @@ my @y;
 
 $x = new Net::Netmask ('209.157.64.0/19');
 print $x->size() == 8192 ? "ok $test\n" : "not ok $test\n"; $test++;
+
+print $x->hostmask() eq '0.0.31.255' ? "ok $test\n" : "not ok $test\n"; $test++;
 
 @y = $x->inaddr();
 print STDERR "REVERSE: @y\n" if $debug;

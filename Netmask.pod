@@ -11,6 +11,7 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 
 	print $block->base() 
 	print $block->mask() 
+	print $block->hostmask() 
 	print $block->bits() 
 	print $block->size() 
 	print $block->maxblock()
@@ -92,6 +93,11 @@ B<Base> does not give an indication of the size of the network block.
 =item B<mask>()
 
 Returns the netmask as a string. Eg: 255.255.255.0. 
+
+=item B<hostmask>()
+
+Returns the host mask which is the oposite of the netmask. 
+Eg: 0.0.0.255.
 
 =item B<bits>()
 
