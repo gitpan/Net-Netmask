@@ -1,6 +1,10 @@
+= 2003/12/05 1.9006
+
+Removed '@'s from this file.
+
 = 2003/11/29 1.9005
 
-Matija Papec <matija@post.hinet.hr> suggested that I do a
+Matija Papec <matija at post.hinet.hr> suggested that I do a
 Schwartzian transform on the IP address sort function.  I 
 tried it.  It's faster.  Sort function replaced.
 
@@ -9,22 +13,22 @@ Added a sort_network_blocks function.
 Added a contains() function to test if one block fits within
 another.
 
-Peter Chen <petechen@netilla.com> was concerned about 
+Peter Chen <petechen at netilla.com> was concerned about 
 using an illegal bitmask.  Now checked.
 
-Long ago, Alexandros M Manoussakis <amm2@ini.cmu.edu> noted that
+Long ago, Alexandros M Manoussakis <amm2 at ini.cmu.edu> noted that
 could be exported even though it was in EXPORT_OK.  Fixed.
 
 = 2003/05/28 1.9004
 
-Martin Lorensen <martin@lorensen.dk>: make 'any' a synonym for
+Martin Lorensen <martin at lorensen.dk>: make 'any' a synonym for
 'default'.  
 
 Bugfix (aslo from Martin): fix the require to accept 5.6.1
 
 = 2003/05/26 1.9003
 
-Roman Shishkin <roman@rt.mipt.ru> provided several (public exported)
+Roman Shishkin <roman at rt.mipt.ru> provided several (public exported)
 functions for looking at network tables:
 	dumpNetworkTable()
 	checkNetblock()
@@ -32,12 +36,12 @@ Inspired: changing findOuterNetblock() so it can take a block
 as it's IP address.
 
 Bugfix: notice that '218.0.0.0 - 221.255.255.255' isn't a valid
-netmask.  Reported by Dan Wright <wright@smx.pair.com>.
+netmask.  Reported by Dan Wright <wright at smx.pair.com>.
 
 Bugfix: could not specify network '0.0.0.0-255.255.255.255'.  Fix
-from Dominic Mitchell <dom@semantico.com>.
+from Dominic Mitchell <dom at semantico.com>.
 
-Added ->sameblock() from Martin Lorensen <martin@lorensen.dk>
+Added ->sameblock() from Martin Lorensen <martin at lorensen.dk>
 
 Added ->cmpblocks().
 
@@ -47,7 +51,7 @@ description.
 Added overloaded block comparision so that blocks can be compared and
 sorted.
 
-Added hostmask syntax a.b.c.d#hostmask - Martin Lorensen <martin@lorensen.dk>
+Added hostmask syntax a.b.c.d#hostmask - Martin Lorensen <martin at lorensen.dk>
 
 Bugfix: t/badnets.t was missing from the MANIFEST.
 
@@ -56,15 +60,15 @@ Some spelling and typo mistakes fixed in the documentation.
 = 2001/11/12
 
 Change the license to make the Debian folks happy.  Interface through
-Jonas Smedegaard <dr@jones.dk>.
+Jonas Smedegaard <dr at jones.dk>.
 
 = 2001/09/29
 
-Sapient Fridge <sapient.fridge@WaCkY.zzn.com> and Alexander Karptsov
-<karp@visti.net> sent a patch for a bug in range2cidrlist.  The
+Sapient Fridge <sapient.fridge at WaCkY.zzn.com> and Alexander Karptsov
+<karp at visti.net> sent a patch for a bug in range2cidrlist.  The
 last IP in the range was skipped.
 
-Sam Denton <sdenton@wantec.com> requested support for 
+Sam Denton <sdenton at wantec.com> requested support for 
 a.b.c.d/mask.mask.mask.mask.
 
 Sam also sent a request that I include the world's fastest
@@ -83,20 +87,20 @@ thus I've changed the examples in the pod.  :-)
 
 Added deleteNetblock to match storeNetblock.
 
-Carol Lerche <cafl@securify.com> contributed findOuterNetblock()
+Carol Lerche <cafl at securify.com> contributed findOuterNetblock()
 and findAllNetblocks().
 
-Kevin Baker <kevin@apnic.net> sent in patches that suggested a new
+Kevin Baker <kevin at apnic.net> sent in patches that suggested a new
 handling of error conditions; extra error conditions to test for; and
 a test script to exercise the error conditions.
 
-Bruce Peikon <Bruce.Peikon@msdw.com> sent a contribution which suggested
+Bruce Peikon <Bruce.Peikon at msdw.com> sent a contribution which suggested
 that enumerate could do so by network.
 
-Dominic Mitchell <dom@semantico.com> sent in code that suggested the 
+Dominic Mitchell <dom at semantico.com> sent in code that suggested the 
 creation of cidrs2contiglists() and range2cidrlist().
 
-A couple of documentation fixes from Igor Vinokurov <igor@rtsnet.ru>.
+A couple of documentation fixes from Igor Vinokurov <igor at rtsnet.ru>.
 
 = 1999/09/20
 
@@ -109,17 +113,17 @@ whois database uses: FirstIP-LastIP.
 
 = 1999/03/27
 
-Jochen Wiedmann <joe@ispsoft.de> contributed a function to test an IP
+Jochen Wiedmann <joe at ispsoft.de> contributed a function to test an IP
 address and a block to test see if the IP address is in the block. 
 Accordingly, there is now a match() method.
 
-Rob Walker <rob@varesearch.com> contributed a function to return the
+Rob Walker <rob at varesearch.com> contributed a function to return the
 first usable adress in a block.  Instead of using that, I added a function
 to return the nth address in a block.  There is now an nth() function.
 
 = 1998/11/29
 
-Jean-Luc Szpyrka <Jean-Luc.Szpyrka@sophia.inria.fr> requested that a
+Jean-Luc Szpyrka <Jean-Luc.Szpyrka at sophia.inria.fr> requested that a
 function be provided that returns the oposite of a netmask.  Accordingly,
 there is now the hostmask() method.
 
