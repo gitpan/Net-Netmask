@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.2;
+$VERSION = 1.3;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -89,6 +89,11 @@ sub new
 sub base { my ($this) = @_; return int2quad($this->{'IBASE'}); }
 sub bits { my ($this) = @_; return $this->{'BITS'}; }
 sub size { my ($this) = @_; return 2**(32- $this->{'BITS'}); }
+sub next { my ($this) = @_; int2quad($this->{'IBASE'} + $this->size()); }
+sub broadcast {
+    my($this) = @_;
+    int2quad($this->{'IBASE'} + $this->size() - 1);
+}
 
 sub desc 
 { 

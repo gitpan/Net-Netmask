@@ -2,4 +2,5 @@ Netmask.pm
 Netmask.pod
 Makefile.PL
 MANIFEST
+README
 t/netmasks.t

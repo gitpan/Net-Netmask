@@ -1,0 +1,138 @@
+NAME
+    Net::Netmask - parse, manipulate and lookup IP network blocks
+
+SYNOPSIS
+            use Net::Netmask;
+
+            $block = new Net::Netmask (network block)
+            $block = new Net::Netmask (network block, netmask)
+
+            print $block->base() 
+            print $block->mask() 
+            print $block->bits() 
+            print $block->size() 
+            print $block->maxblock()
+            print $block->broadcast()
+            print $block->next()
+
+            for $ip ($block->enumerate()) { }
+
+            for $zone ($block->inaddr()) { }
+
+            my $table = {};
+            $block->storeNetblock()
+            $block->storeNetblock($table)
+
+            $block = findNetblock(ip)
+            $block = findNetblock(ip, $table)
+
+DESCRIPTION
+    Net::Netblock parses and understand IPv4 CIDR blocks. It's built with an
+    object-oriented interface. Nearly all functions are methods that operate
+    on a Net::Netblock object.
+
+    There are methods that provide the nearly all bits of information about
+    a network block that you might want.
+
+CONSTRUCTING
+    Net::Netmask objects are created with an IP address and optionally a
+    mask. There are many forms that are recognized:
+
+    '140.174.82.0/24'               The preferred form.
+
+    '140.174.82.0:255.255.255.0'
+    '140.174.82.0', '255.255.255.0'
+    '140.174.82.0', '0xffffff00'
+    '140.174.82.4'                  A /32 block.
+
+    '140.174.82'                    Always a /24 block.
+
+    '140.174'                       Always a /16 block.
+
+    '140'                           Always a /8 block.
+
+    '140.174.82/24'
+    '140.174/16'
+    'default'                       0.0.0.0/0 (the default route)
+
+METHODS
+    base()                   Returns base address of the network block as a
+                             string. Eg: 140.174.82.0. Base does not give an
+                             indication of the size of the network block.
+
+    mask()                   Returns the netmask as a string. Eg: 255.255.255.0.
+
+    bits()                   Returns the netmask as a number of bits in the
+                             network portion of the address for this block.
+                             Eg: 24.
+
+    size()                   Returns the number of IP addresses in a block. Eg:
+                             256.
+
+    broadcast()              The blocks broadcast address. (The last IP address
+                             inside the block.) Eg: 192.168.1.0/24 =>
+                             192.168.1.255
+
+    next()                   The first IP address following the block. (The IP
+                             address following the broadcase address.) Eg:
+                             192.168.1.0/24 => 192.168.2.0
+
+    maxblock()               Much of the time, it is not possible to determine
+                             the size of a network block just from it's base
+                             address. For example, with the network block
+                             '140.174.82.0/27', if you only had the
+                             '140.174.82.0' portion you wouldn't be able to
+                             tell for certain the size of the block.
+                             '140.174.82.0' could be anything from a '/23'
+                             to a '/32'. The maxblock() method gives the
+                             size of the larges block that the current
+                             block's address would allow it to be. The size
+                             is given in bits. Eg: 23.
+
+    enumerate()              Returns a list of all the IP addresses in the
+                             block. Be very careful not to use this function
+                             of large blocks. The IP addresses are returned
+                             as strings. Eg: '140.174.82.0', '140.174.82.1',
+                             ... '140.174.82.255'.
+
+    inaddr()                 Returns an inline list of tuples. There is a tuple
+                             for each DNS zone name in the block. If the
+                             block is smaller than a /24, then the zone of
+                             the enclosing /24 is returned.
+
+                             Each tuple contains: the DNS zone name, the
+                             last component of the first IP address in the
+                             block in that zone, the last component of the
+                             last IP address in the block in that zone.
+
+                             Examples: the list returned for the block
+                             '140.174.82.0/23' would be: '82.174.140.in-
+                             addr.arpa', 0, 255, '83.174.140.in-addr.arpa',
+                             0, 255. The list returned for the block
+                             '140.174.82.64/27' would be: '82.174.140.in-
+                             addr.arpa', 64, 95.
+
+    storeNetblock([$t])      Adds the current block to an table of network
+                             blocks. The table can be used to query which
+                             network block a given IP address is in.
+
+                             The optional argument allows there to be more
+                             than one table. By default, an internal table
+                             is used. If more than one table is needed, then
+                             supply a reference to a HASH to store the data
+                             in.
+
+FUNCTIONS
+    findNetblock(ip, [$t])   Search the table of network blocks (created with
+                             storeNetBlock) to find if any of them contain
+                             the given IP address. The IP address is
+                             expected to be a string.
+
+                             The return value is either a Net::Netblock
+                             object or undef.
+
+COPYRIGHT
+    Copyright (C) 1998, David Muir Sharnoff. All rights reserved. License
+    hearby granted for anyone to use this module at their own risk. Please
+    feed useful changes back to muir@idiom.com.
+

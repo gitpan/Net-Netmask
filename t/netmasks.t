@@ -45,7 +45,7 @@ my @lookup2 = qw(
 );
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2;
+	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 2;
 
 my $debug = 0;
 my $test = 1;
@@ -131,3 +131,8 @@ while (($addr, $result) = splice(@lookup2, 0, 2)) {
 		$addr, $nb->desc(), $result if $debug;
 	print $nb->desc() eq $result ? "ok $test\n" : "not ok $test\n"; $test++;
 }
+
+
+$newmask = Net::Netmask->new("192.168.1.0/24");
+print (($newmask->broadcast() eq "192.168.1.255") ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->next() eq "192.168.2.0") ? "ok $test\n" : "not ok $test\n"); $test++;
