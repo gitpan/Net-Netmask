@@ -5,3 +5,4 @@ MANIFEST
 README
 CHANGELOG
 t/netmasks.t
+t/badnets.t

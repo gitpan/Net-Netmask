@@ -11,7 +11,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	$block = new2 Net::Netmask (network block)
 	$block = new2 Net::Netmask (network block, netmask)
 
-	print $block->desc() 		# a.b.c.d/bits
+
+	print $block;			# a.b.c.d/bits
 	print $block->base() 
 	print $block->mask() 
 	print $block->hostmask() 
@@ -22,6 +23,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	print $block->next()
 	print $block->match($ip);
 	print $block->nth(1, [$bitstep]);
+	if ($block->sameblock("network block")) ...
+	if ($block->cmpblocks("network block")) ...
 
 	for $ip ($block->enumerate([$bitstep])) { }
 
@@ -34,6 +37,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	$block = findNetblock(ip, [$table])
 	$block = findOuterNetblock(ip, [$table])
 	@blocks = findAllNetblock(ip, [$table])
+	if ($block->checkNetblock([$table]) ...
+	$block2 = $block1->findOuterNetblock([$table])
 
 	@blocks = range2cidrlist($beginip, $endip);
 
@@ -103,6 +108,10 @@ Always a /8 block.
 
 0.0.0.0/0 (the default route)
 
+=item '216.240.32.0#0.0.31.255'
+
+A hostmask (as used by Cisco access-lists).
+
 =back
 
 There are two constructor methods: C<new> and C<new2>.  The difference
@@ -118,40 +127,45 @@ $Net::Netmask::error.
 
 =over 25
 
-=item B<base>()
+=item ->B<desc>()
+
+Returns a description of the network block.  Eg: 216.240.32.0/19.
+This is also available as overloaded stringification.
+
+=item ->B<base>()
 
 Returns base address of the network block as a string.  Eg: 216.240.32.0.  
 B<Base> does not give an indication of the size of the network block.
 
-=item B<mask>()
+=item ->B<mask>()
 
 Returns the netmask as a string. Eg: 255.255.255.0. 
 
-=item B<hostmask>()
+=item ->B<hostmask>()
 
-Returns the host mask which is the oposite of the netmask. 
+Returns the host mask which is the opposite of the netmask. 
 Eg: 0.0.0.255.
 
-=item B<bits>()
+=item ->B<bits>()
 
 Returns the netmask as a number of bits in the network
 portion of the address for this block.  Eg: 24.
 
-=item B<size>()
+=item ->B<size>()
 
 Returns the number of IP addresses in a block.  Eg: 256.
 
-=item B<broadcast>()
+=item ->B<broadcast>()
 
 The blocks broadcast address. (The last IP address inside the
 block.) Eg: 192.168.1.0/24 => 192.168.1.255
 
-=item B<next>()
+=item ->B<next>()
 
 The first IP address following the block. (The IP address following
-the broadcase address.) Eg: 192.168.1.0/24 => 192.168.2.0
+the broadcast address.) Eg: 192.168.1.0/24 => 192.168.2.0
 
-=item B<match>($ip)
+=item ->B<match>($ip)
 
 Returns a true if the IP number $ip matches the given network. That
 is, a true value is returned if $ip is between base() amd broadcast().
@@ -173,7 +187,7 @@ the position inside the block, a good idiom is:
   $pos = $block->match($ip) || die;
   $pos += 0;
 
-=item B<maxblock>()
+=item ->B<maxblock>()
 
 Much of the time, it is not possible to determine the size
 of a network block just from it's base address.  For example,
@@ -181,10 +195,10 @@ with the network block '216.240.32.0/27', if you only had the
 '216.240.32.0' portion you wouldn't be able to tell for certain
 the size of the block.  '216.240.32.0' could be anything from a
 '/23' to a '/32'.  The B<maxblock>() method gives the size of 
-the larges block that the current block's address would allow it
+the largest block that the current block's address would allow it
 to be.  The size is given in bits.  Eg: 23.
 
-=item B<enumerate>([$bitstep)
+=item ->B<enumerate>([$bitstep)
 
 Returns a list of all the IP addresses in the block.  Be very 
 careful not to use this function of large blocks.  The IP
@@ -195,14 +209,14 @@ If the optional argument is given, step through the block in
 increments of a given network size.  To step by 4, use a bitstep
 of 30 (as in a /30 network).
 
-=item B<nth>($index, [$bitstep])
+=item ->B<nth>($index, [$bitstep])
 
 Returns the nth element of the array that B<enumerate> would return
 if it were called.  So, to get the first usable address in a block,
 use B<nth>(1).  To get the broadcast address, use B<nth>(-1).  To
 get the last usable adress, use B<nth>(-2).
 
-=item B<inaddr>()
+=item ->B<inaddr>()
 
 Returns an inline list of tuples.  There is a tuple for each
 DNS zone name in the block.  If the block is smaller than a /24, 
@@ -213,11 +227,24 @@ the first IP address in the block in that zone, the last component
 of the last IP address in the block in that zone.  
 
 Examples: the list returned for the block '216.240.32.0/23' would
-be: '82.174.140.in-addr.arpa', 0, 255, '83.174.140.in-addr.arpa', 0, 255.
+be: '32.240.216.in-addr.arpa', 0, 255, '33.240.216.in-addr.arpa', 0, 255.
 The list returned for the block '216.240.32.64/27' would be: 
-'82.174.140.in-addr.arpa', 64, 95.
+'32.240.216.in-addr.arpa', 64, 95.
 
-=item B<storeNetblock>([$t])
+=item ->B<sameblock>($block)
+
+Compares two blocks.  The second block will be auto-converted from
+a string if it isn't already a Net::Netmask object.  Returns 1 if
+they are identical.
+
+=item ->B<cmpblocks>($block)
+
+Compares two blocks.  The second block will be auto-converted from
+a string if it isn't already a Net::Netmask object.  Returns -1,
+0, or 1 depending on how they compare.  
+
+
+=item ->B<storeNetblock>([$t])
 
 Adds the current block to an table of network blocks.  The 
 table can be used to query which network block a given IP address
@@ -228,7 +255,7 @@ By default, an internal table is used.   If more than one table
 is needed, then supply a reference to a HASH to store the 
 data in.
 
-=item B<deleteNetblock>([$t])
+=item ->B<deleteNetblock>([$t])
 
 Deletes the current block from a table of network blocks.
 
@@ -236,6 +263,42 @@ The optional argument allows there to be more than one table.
 By default, an internal table is used.   If more than one table
 is needed, then supply a reference to a HASH to store the 
 data in.
+
+=item ->B<checkNetblock>([$t])
+
+Returns true of the netblock is already in the network table.
+
+=back
+
+=head1 METHOD/FUNCTION COMBOS
+
+=over 25
+
+=item B<findOuterNetblock>(ip, [$t])
+
+Search the table of network blocks (created with B<storeNetBlock>)
+to find if any of them contain the given IP address.  The IP address
+can either be a string or a Net::Netmask object (method invocation).
+If more than one block in the table contains the IP address or
+block, the largest network block will be the one returned.
+
+The return value is either a Net::Netmask object or undef.
+
+=back
+
+=head1 OVERLOADING
+
+=over 25
+
+=item B<"">
+
+Strinification is overloaded to be the ->B<desc>() method.
+
+=item B<cmp>
+
+Numerical and string comparisions have been overloaded to 
+the ->B<cmpblocks>() method.  This allows blocks to be sorted
+without specifying a sort function.
 
 =back
 
@@ -261,16 +324,6 @@ one returned.
 
 The return value is either a Net::Netmask object or undef.
 
-=item B<findOuterNetblock>(ip, [$t])
-
-Search the table of network blocks (created with B<storeNetBlock>) to
-find if any of them contain the given IP address.  The IP address
-is expected to be a string.   If more than one block in the table
-contains the IP address, the largest network block will be the 
-one returned.
-
-The return value is either a Net::Netmask object or undef.
-
 =item B<findAllNetblock>(ip, [$t])
 
 Search the table of network blocks (created with B<storeNetBlock>) to
@@ -279,6 +332,11 @@ is expected to be a string.   All network blocks in the table that
 contain the IP address will be returned.
 
 The return value is a list of Net::Netmask objects.
+
+=item B<dumpNetworkTable>([$t])
+
+Returns a list of the networks in a network table (as 
+created by ->B<storeNetblock>()).
 
 =item B<range2cidrlist>($startip, $endip)
 
@@ -295,11 +353,11 @@ will return a list of Net::Netmask objects that corrospond to:
 
 =item B<cidrs2contiglists>(@listOfBlocks)
 
-C<cidrs2contiglists> will rearange a list of Net::Netmask objects
-such that contigueous sets are in sublists and each sublist is
+C<cidrs2contiglists> will rearrange a list of Net::Netmask objects
+such that contiguous sets are in sublists and each sublist is
 discontigeous with the next.
 
-For example, given a list of Net::Netmask objects corrosponding to
+For example, given a list of Net::Netmask objects corresponding to
 the following blocks:
 
 	216.240.32.128/25

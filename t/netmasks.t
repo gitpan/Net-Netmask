@@ -1,6 +1,7 @@
-#!/usr/local/bin/perl -I. -w
+#!/usr/bin/perl -I. -w
 
 use Net::Netmask;
+use Net::Netmask qw(sameblock cmpblocks);
 use Carp;
 use Carp qw(verbose);
 
@@ -19,6 +20,7 @@ my @rtests = qw(
  209.157/17			u	209.157.0.0	255.255.128.0	17 16
  default			u	0.0.0.0		0.0.0.0		0  0
 );
+push(@rtests, '209.157.68.22#0.0.31.255', 'u', '209.157.64.0', '255.255.224.0', '19', '18');
 
 my @store = qw(
  209.157.64.0/19
@@ -49,7 +51,8 @@ my @lookup2 = qw(
 );
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4 +1 +1;
+	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4 +1 +1 +26
+	+30 +29;
 
 my $debug = 0;
 my $test = 1;
@@ -118,6 +121,7 @@ print $y[8191] eq '10.2.31.255' ? "ok $test\n" : "not ok $test\n"; $test++;
 print defined($y[8192]) ? "not ok $test\n" : "ok $test\n"; $test++;
 
 my $table = {};
+my $table9 = {};
 
 for my $b (@store) {
 	$x = new Net::Netmask ($b);
@@ -127,6 +131,7 @@ for my $b (@store) {
 for my $b (@store2) {
 	$x = new Net::Netmask ($b);
 	$x->storeNetblock($table);
+	$x->storeNetblock($table9);
 }
 
 my $result;
@@ -182,9 +187,15 @@ my @store3 = qw(
  216.240.40.4/30
 );
 my $table3 = {};
+my $table8 = {};
+my $table7 = {};
+my $table6 = {};
 for my $b (@store3) {
 	$x = new Net::Netmask ($b);
 	$x->storeNetblock($table3);
+	$x->storeNetblock($table8);
+	$x->storeNetblock($table7);
+	$x->storeNetblock($table6);
 }
 lookeq($table3, "216.240.40.5", "216.240.40.4/30");
 lookeq($table3, "216.240.40.1", "216.240.40.0/27");
@@ -296,8 +307,132 @@ my (@iplist) = generate(500);
 my (@sorted1) = sort_by_ip_address(@iplist);
 
 my (@blist) = map { new Net::Netmask $_ } @iplist;
-my (@clist) = sort by_net_netmask_block2 @blist;
+my (@clist) = sort @blist;
 my (@sorted2) = map { $_->base() } @clist;
 
 print ("@sorted1" eq "@sorted2" ? "ok $test\n" : "not ok $test\n"); $test++;
+
+my (@dlist) = sort @blist;
+my (@sorted3) = map { $_->base() } @dlist;
+
+print "AT TEST $test\n";
+print ("@sorted1" eq "@sorted3" ? "ok $test\n" : "not ok $test\n"); $test++;
+
+my $q144 = new Net::Netmask '216.240.32.0/25';
+
+for my $i (qw(216.240.32.0/24 216.240.32.0/26 216.240.33.0/25)) {
+	my $q144p = new Net::Netmask $i;
+	print ($q144 eq $q144p ? "not ok $test\n" : "ok $test\n"); $test++;
+	print ($q144 == $q144p ? "not ok $test\n" : "ok $test\n"); $test++;
+	print (sameblock($q144, $i) ? "not ok $test\n" : "ok $test\n"); $test++;
+	print (cmpblocks($q144, $i) ? "ok $test\n" : "not ok $test\n"); $test++;
+	print ($q144->sameblock($i) ? "not ok $test\n" : "ok $test\n"); $test++;
+	print ($q144->cmpblocks($i) ? "ok $test\n" : "not ok $test\n"); $test++;
+}
+
+my $q144pp = new Net::Netmask '216.240.32.0/25'; 
+print ($q144 == $q144pp ? "ok $test\n" : "not ok $test\n"); $test++;
+print ($q144 eq $q144pp ? "ok $test\n" : "not ok $test\n"); $test++;
+print (sameblock($q144, '216.240.32.0/25') ? "ok $test\n" : "not ok $test\n"); $test++;
+print (cmpblocks($q144, '216.240.32.0/25') ? "not ok $test\n" : "ok $test\n"); $test++;
+print ($q144->sameblock('216.240.32.0/25') ? "ok $test\n" : "not ok $test\n"); $test++;
+print ($q144->cmpblocks('216.240.32.0/25') ? "not ok $test\n" : "ok $test\n"); $test++;
+
+print ($q144->desc eq "$q144" ? "ok $test\n" : "not ok $test\n"); $test++;
+
+my $dnts = join(' ',dumpNetworkTable($table9));
+print ($dnts eq '0.0.0.0/0 209.157.64.0/19 209.157.80.0/24 209.157.81.16/28' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+sub lookouter
+{
+	my ($table, $value, $result) = @_;
+	my $found = findOuterNetblock($value, $table);
+	if ($result) {
+#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
+		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+	} else {
+		print ($found ? "not ok $test\n" : "ok $test\n");
+	}
+	$test++;
+}
+
+# 216.240.32.0/19
+# 216.240.40.0/24
+# 216.240.40.0/27
+# 216.240.40.4/30
+
+lookouter($table8, "216.240.40.5", "216.240.32.0/19");
+lookouter($table8, "216.240.40.1", "216.240.32.0/19");
+lookouter($table8, "216.240.40.50", "216.240.32.0/19");
+lookouter($table8, "216.240.50.150", "216.240.32.0/19");
+lookouter($table8, "209.157.32.32", undef);
+fdel("216.240.32.10", "216.240.32.0/19", $table8);
+lookouter($table8, "216.240.40.5", "216.240.40.0/24");
+lookouter($table8, "216.240.40.1", "216.240.40.0/24");
+lookouter($table8, "216.240.40.50", "216.240.40.0/24");
+lookouter($table8, "216.240.50.150", undef);
+lookouter($table8, "209.157.32.32", undef);
+fdel("216.240.40.150", "216.240.40.0/24", $table8);
+lookouter($table8, "216.240.40.5", "216.240.40.0/27");
+lookouter($table8, "216.240.40.1", "216.240.40.0/27");
+lookouter($table8, "216.240.40.50", undef);
+lookouter($table8, "216.240.50.150", undef);
+lookouter($table8, "209.157.32.32", undef);
+fdel("216.240.40.3", "216.240.40.0/27", $table8);
+lookouter($table8, "216.240.40.5", "216.240.40.4/30");
+lookouter($table8, "216.240.40.1", undef);
+lookouter($table8, "216.240.40.50", undef);
+lookouter($table8, "216.240.50.150", undef);
+lookouter($table8, "209.157.32.32", undef);
+fdel("216.240.40.4", "216.240.40.4/30", $table8);
+lookouter($table8, "216.240.40.5", undef);
+lookouter($table8, "216.240.40.1", undef);
+lookouter($table8, "216.240.40.50", undef);
+lookouter($table8, "216.240.50.150", undef);
+lookouter($table8, "209.157.32.32", undef);
+
+
+sub lookouterO
+{
+	my ($table, $value, $result) = @_;
+	my $block = new2 Net::Netmask $value;
+	my $found = findOuterNetblock($block, $table);
+	if ($result) {
+#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
+		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+	} else {
+		print ($found ? "not ok $test\n" : "ok $test\n");
+	}
+	$test++;
+}
+
+lookouterO($table7, "216.240.40.5/30", "216.240.32.0/19");
+lookouterO($table7, "216.240.40.5/29", "216.240.32.0/19");
+lookouterO($table7, "216.240.40.50/24", "216.240.32.0/19");
+lookouterO($table7, "216.240.50.150/23", "216.240.32.0/19");
+lookouterO($table7, "209.157.32.32", undef);
+fdel("216.240.32.10", "216.240.32.0/19", $table7);
+lookouterO($table7, "216.240.40.5/30", "216.240.40.0/24");
+lookouterO($table7, "216.240.40.5/29", "216.240.40.0/24");
+lookouterO($table7, "216.240.40.50/24", "216.240.40.0/24");
+lookouterO($table7, "216.240.50.150/23", undef);
+lookouterO($table7, "209.157.32.32", undef);
+fdel("216.240.40.150", "216.240.40.0/24", $table7);
+lookouterO($table7, "216.240.40.5/30", "216.240.40.0/27");
+lookouterO($table7, "216.240.40.5/29", "216.240.40.0/27");
+lookouterO($table7, "216.240.40.50/24", undef);
+lookouterO($table7, "216.240.50.150/23", undef);
+lookouterO($table7, "209.157.32.32", undef);
+fdel("216.240.40.3", "216.240.40.0/27", $table7);
+lookouterO($table7, "216.240.40.5/30", "216.240.40.4/30");
+lookouterO($table7, "216.240.40.5/29", undef);
+lookouterO($table7, "216.240.40.50/24", undef);
+lookouterO($table7, "216.240.50.150/23", undef);
+lookouterO($table7, "209.157.32.32", undef);
+fdel("216.240.40.4", "216.240.40.4/30", $table7);
+lookouterO($table7, "216.240.40.5/30", undef);
+lookouterO($table7, "216.240.40.1/29", undef);
+lookouterO($table7, "216.240.40.50/24", undef);
+lookouterO($table7, "216.240.50.150/23", undef);
+lookouterO($table7, "209.157.32.32/8", undef);
 

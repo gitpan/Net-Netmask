@@ -1,18 +1,21 @@
-require 5.004;
+require 5.006_1;
 
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9002;
+$VERSION = 1.9003;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(findNetblock findOuterNetblock findAllNetblock
-	cidrs2contiglists range2cidrlist sort_by_ip_address);
-@EXPORT_OK = qw(int2quad quad2int %quadmask2bits imask);
+	cidrs2contiglists range2cidrlist sort_by_ip_address
+	dumpNetworkTable);
+@EXPORT_OK = (@EXPORT, qw(int2quad quad2int %quadmask2bits 
+	%quadhostmask2bits imask sameblock cmpblocks));
 
 my $remembered = {};
 my %quadmask2bits;
+my %quadhostmask2bits;
 my %imask2bits;
 my %size2bits;
 
@@ -21,6 +24,11 @@ $debug = 1;
 
 use strict;
 use Carp;
+use overload
+	'""' => \&desc,
+	'<=>' => \&cmp_net_netmask_block,
+	'cmp' => \&cmp_net_netmask_block,
+	'fallback' => 1; 
 
 sub new
 {
@@ -42,6 +50,14 @@ sub new
 			$bits = $quadmask2bits{$quadmask};
 		} else {
 			$error = "illegal netmask: $quadmask";
+		}
+	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)[#](\d+\.\d+\.\d+\.\d+)$,) {
+		$base = $1;
+		my $hostmask = $2;
+		if (exists $quadhostmask2bits{$hostmask}) {
+			$bits = $quadhostmask2bits{$hostmask};
+		} else {
+			$error = "illegal hostmask: $hostmask";
 		}
 	} elsif (($net =~ m,^\d+\.\d+\.\d+\.\d+$,)
 		&& ($mask =~ m,\d+\.\d+\.\d+\.\d+$,)) 
@@ -85,7 +101,9 @@ sub new
 		my $diff = ($end || 0) - ($ibase || 0) + 1;
 		$bits = $size2bits{$diff};
 		$error = "could not find exact fit for $net"
-			if ! defined($bits) && ! defined($error);
+			if ! defined $error && (
+				! defined $bits
+				|| ($ibase & ~imask($bits)));
 	} else {
 		$error = "could not parse $net";
 		$error .= " $mask" if $mask;
@@ -93,7 +111,7 @@ sub new
 
 	carp $error if $error && $debug;
 
-	$ibase = quad2int($base || 0) unless $ibase;
+	$ibase = quad2int($base || 0) unless defined $ibase;
 	unless (defined($ibase) || defined($error)) {
 		$error = "could not parse $net";
 		$error .= " $mask" if $mask;
@@ -132,8 +150,7 @@ sub broadcast
 
 sub desc 
 { 
-	my ($this) = @_; 
-	return int2quad($this->{'IBASE'}).'/'.$this->{'BITS'};
+	return int2quad($_[0]->{'IBASE'}).'/'.$_[0]->{'BITS'};
 }
 
 sub imask 
@@ -277,13 +294,21 @@ sub findOuterNetblock
 	my ($ipquad, $t) = @_;
 	$t = $remembered unless $t;
 
-	my $ip = quad2int($ipquad);
+	my $ip;
+	my $mask;
+	if (ref($ipquad)) {
+		$ip = $ipquad->{IBASE};
+		$mask = $ipquad->{BITS};
+	} else {
+		$ip = quad2int($ipquad);
+		$mask = 32;
+	}
 
-	for (my $b = 0; $b <= 32; $b++) {
+	for (my $b = 0; $b <= $mask; $b++) {
 		my $im = imask($b);
 		my $nb = $ip & $im;
 		next unless exists $t->{$nb};
-		my $mb = imaxblock($nb, 32);
+		my $mb = imaxblock($nb, $mask);
 		my $i = $b - $mb;
 		confess "$mb, $b, $ipquad, $nb" if $i < 0;
 		confess "$mb, $b, $ipquad, $nb" if $i > 32;
@@ -317,6 +342,36 @@ sub findAllNetblock
 		}
 	}
 	return @ary;
+}
+
+sub dumpNetworkTable
+{
+	my ($t) = @_;
+	$t = $remembered unless $t;
+
+	my @ary;
+	foreach my $base (keys %$t) {
+		push(@ary, grep (defined($_), @{$t->{base}}));
+		for my $x (@{$t->{$base}}) {
+			push(@ary, $x)
+				if defined $x;
+		}
+	}
+	return sort @ary;
+}
+
+sub checkNetblock
+{
+	my ($this, $t) = @_;
+	$t = $remembered unless $t;
+
+	my $base = $this->{'IBASE'};
+
+	my $mb = maxblock($this);
+	my $b = $this->{'BITS'};
+	my $i = $b - $mb;
+
+	return defined $t->{$base}->[$i];
 }
 
 sub match
@@ -375,7 +430,7 @@ sub range2cidrlist
 
 sub cidrs2contiglists
 {
-	my (@cidrs) = sort by_net_netmask_block @_;
+	my (@cidrs) = sort @_;
 	my @result;
 	while (@cidrs) {
 		my (@r) = shift(@cidrs);
@@ -393,17 +448,37 @@ sub by_net_netmask_block
 		|| $a->{'BITS'} <=> $b->{'BITS'};
 }
 
+sub sameblock
+{
+	return ! cmpblocks(@_);
+}
+
+sub cmpblocks
+{
+	my $this = shift;
+	my $class = ref $this;
+	my $other = (ref $_[0]) ? shift : $class->new(@_);
+	return cmp_net_netmask_block($this, $other);
+}
+
+sub cmp_net_netmask_block
+{
+	return ($_[0]->{IBASE} <=> $_[1]->{IBASE} 
+		|| $_[0]->{BITS} <=> $_[1]->{BITS});
+}
+
 sub sort_by_ip_address
 {
 	return sort { pack("C4",split(/\./,$a)) cmp pack("C4",split(/\./,$b)) } @_
 }
 
-
 BEGIN {
 	for (my $i = 0; $i <= 32; $i++) {
 		$imask2bits{imask($i)} = $i;
 		$quadmask2bits{int2quad(imask($i))} = $i;
+		$quadhostmask2bits{int2quad(~imask($i))} = $i;
 		$size2bits{ 2**(32-$i) } = $i;
 	}
 }
 1;
+

@@ -1,6 +1,39 @@
+
+= 2003/05/26 1.9003
+
+Roman Shishkin <roman@rt.mipt.ru> provided several (public exported)
+functions for looking at network tables:
+	dumpNetworkTable()
+	checkNetblock()
+Inspired: changing findOuterNetblock() so it can take a block
+as it's IP address.
+
+Bugfix: notice that '218.0.0.0 - 221.255.255.255' isn't a valid
+netmask.  Reported by Dan Wright <wright@smx.pair.com>.
+
+Bugfix: could not specify network '0.0.0.0-255.255.255.255'.  Fix
+from Dominic Mitchell <dom@semantico.com>.
+
+Added ->sameblock() from Martin Lorensen <martin@lorensen.dk>
+
+Added ->cmpblocks().
+
+Added overloaded stringification so that blocks stringify to their
+description.
+
+Added overloaded block comparision so that blocks can be compared and
+sorted.
+
+Added hostmask syntax a.b.c.d#hostmask - Martin Lorensen <martin@lorensen.dk>
+
+Bugfix: t/badnets.t was missing from the MANIFEST.
+
+Some spelling and typo mistakes fixed in the documentation.
+
 = 2001/11/12
 
-Change the license to make the Debian folks happy.
+Change the license to make the Debian folks happy.  Interface through
+Jonas Smedegaard <dr@jones.dk>.
 
 = 2001/09/29
 
