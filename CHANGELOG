@@ -1,4 +1,11 @@
 
+= 2003/05/28 1.9004
+
+Martin Lorensen <martin@lorensen.dk>: make 'any' a synonym for
+'default'.  
+
+Bugfix (aslo from Martin): fix the require to accept 5.6.1
+
 = 2003/05/26 1.9003
 
 Roman Shishkin <roman@rt.mipt.ru> provided several (public exported)

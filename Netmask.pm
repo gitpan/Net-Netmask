@@ -1,9 +1,9 @@
-require 5.006_1;
+require 5.006_001;
 
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9003;
+$VERSION = 1.9004;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -90,7 +90,7 @@ sub new
 		($base, $bits) = ("$1.0", $2);
 	} elsif ($net =~ m,^(\d+\.\d+)/(\d+)$,) {
 		($base, $bits) = ("$1.0.0", $2);
-	} elsif ($net eq 'default') {
+	} elsif ($net eq 'default' || $net eq 'any') {
 		($base, $bits) = ("0.0.0.0", 0);
 	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)$,) {
 		# whois format
