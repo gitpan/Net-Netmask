@@ -2,13 +2,14 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9007;
+$VERSION = 1.9008;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(findNetblock findOuterNetblock findAllNetblock
 	cidrs2contiglists range2cidrlist sort_by_ip_address
-	dumpNetworkTable sort_network_blocks);
+	dumpNetworkTable sort_network_blocks cidrs2cidrs
+	cidrs2inverse);
 @EXPORT_OK = (@EXPORT, qw(int2quad quad2int %quadmask2bits 
 	%quadhostmask2bits imask sameblock cmpblocks contains));
 
@@ -23,6 +24,7 @@ use vars qw($error $debug %quadmask2bits %quadhostmask2bits);
 $debug = 1;
 
 use strict;
+use warnings;
 use Carp;
 use overload
 	'""' => \&desc,
@@ -155,6 +157,9 @@ sub broadcast
 	int2quad($this->{'IBASE'} + $this->size() - 1);
 }
 
+*first = \&base;
+*last = \&broadcast;
+
 sub desc 
 { 
 	return int2quad($_[0]->{'IBASE'}).'/'.$_[0]->{'BITS'};
@@ -222,6 +227,15 @@ sub inaddr
 	return @ary;
 }
 
+sub tag
+{
+	my $this = shift;
+	my $tag = shift;
+	my $val = $this->{'T'.$tag};
+	$this->{'T'.$tag} = $_[0] if @_;
+	return $val;
+}
+
 sub quad2int
 {
 	my @bytes = split(/\./,$_[0]);
@@ -279,12 +293,14 @@ sub findNetblock
 	$t = $remembered unless $t;
 
 	my $ip = quad2int($ipquad);
+	my %done;
 
 	for (my $b = 32; $b >= 0; $b--) {
 		my $im = imask($b);
 		my $nb = $ip & $im;
 		next unless exists $t->{$nb};
 		my $mb = imaxblock($nb, 32);
+		next if $done{$mb}++;
 		my $i = $b - $mb;
 		confess "$mb, $b, $ipquad, $nb" if $i < 0;
 		confess "$mb, $b, $ipquad, $nb" if $i > 32;
@@ -333,12 +349,14 @@ sub findAllNetblock
 	$t = $remembered unless $t;
 	my @ary ;
 	my $ip = quad2int($ipquad);
+	my %done;
 
 	for (my $b = 32; $b >= 0; $b--) {
 		my $im = imask($b);
 		my $nb = $ip & $im;
 		next unless exists $t->{$nb};
 		my $mb = imaxblock($nb, 32);
+		next if $done{$mb}++;
 		my $i = $b - $mb;
 		confess "$mb, $b, $ipquad, $nb" if $i < 0;
 		confess "$mb, $b, $ipquad, $nb" if $i > 32;
@@ -420,7 +438,12 @@ sub range2cidrlist
 
 	($start, $end) = ($end, $start)
 		if $start > $end;
+	return irange2cidrlist($start, $end);
+}
 
+sub irange2cidrlist
+{
+	my ($start, $end) = @_;
 	my @result;
 	while ($end >= $start) {
 		my $maxsize = imaxblock($start, 32);
@@ -437,16 +460,64 @@ sub range2cidrlist
 
 sub cidrs2contiglists
 {
-	my (@cidrs) = sort @_;
+	my (@cidrs) = sort_network_blocks(@_);
 	my @result;
 	while (@cidrs) {
 		my (@r) = shift(@cidrs);
-		push(@r, shift(@cidrs))
-			while $cidrs[0] && $r[$#r]->{'IBASE'} + $r[$#r]->size 
-				== $cidrs[0]->{'IBASE'};
+		my $max = $r[0]->{IBASE} + $r[0]->size;
+		while ($cidrs[0] && $cidrs[0]->{IBASE} <= $max) {
+			my $nm = $cidrs[0]->{IBASE} + $cidrs[0]->size;
+			$max = $nm if $nm > $max;
+			push(@r, shift(@cidrs));
+		}
 		push(@result, [@r]);
 	}
 	return @result;
+}
+
+sub cidrs2cidrs
+{
+	my (@cidrs) = sort_network_blocks(@_);
+	my @result;
+	while (@cidrs) {
+		my (@r) = shift(@cidrs);
+		my $max = $r[0]->{IBASE} + $r[0]->size;
+		while ($cidrs[0] && $cidrs[0]->{IBASE} <= $max) {
+			my $nm = $cidrs[0]->{IBASE} + $cidrs[0]->size;
+			$max = $nm if $nm > $max;
+			push(@r, shift(@cidrs));
+		}
+		my $start = $r[0]->{IBASE};
+		my $end = $max - 1;
+		push(@result, irange2cidrlist($start, $end));
+	}
+	return @result;
+}
+
+sub cidrs2inverse
+{
+	my $outer = shift;
+	$outer = __PACKAGE__->new($outer) unless ref($outer);
+	my (@cidrs) = cidrs2cidrs(@_);
+	my $first = $outer->{IBASE};
+	my $last = $first + $outer->size() -1;
+	shift(@cidrs) while $cidrs[0] && $cidrs[0]->{IBASE} + $cidrs[0]->size < $first;
+	my @r;
+	while (@cidrs && $first < $last) {
+		if ($first < $cidrs[0]->{IBASE}) {
+			if ($last <= $cidrs[0]->{IBASE}-1) {
+				return (@r, irange2cidrlist($first, $last));
+			}
+			push(@r, irange2cidrlist($first, $cidrs[0]->{IBASE}-1));
+		}
+		last if $cidrs[0]->{IBASE} > $last;
+		$first = $cidrs[0]->{IBASE} + $cidrs[0]->size;
+		shift(@cidrs);
+	}
+	if ($first < $last) {
+		push(@r, irange2cidrlist($first, $last));
+	}
+	return @r;
 }
 
 sub by_net_netmask_block
@@ -475,7 +546,7 @@ sub contains
 	my $other = (ref $_[0]) ? shift : $class->new(@_);
 	return 0 if $this->{IBASE} > $other->{IBASE};
 	return 0 if $this->{BITS} > $other->{BITS};
-	return 0 if $other->{IBASE} > $this->{IBASE} + $this->size;
+	return 0 if $other->{IBASE} > $this->{IBASE} + $this->size -1;
 	return 1;
 }
 

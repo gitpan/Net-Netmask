@@ -33,6 +33,7 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	my $table = {};
 	$block->storeNetblock([$table])
 	$block->deleteNetblock([$table])
+	@missingblocks = $block->cidrs2inverse(@blocks)
 
 	$block = findNetblock(ip, [$table])
 	$block = findOuterNetblock(ip, [$table])
@@ -42,6 +43,7 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	@blocks = dumpNetworkTable([$table])
 
 	@blocks = range2cidrlist($beginip, $endip);
+	@blocks = cidrs2cidrs(@blocks_with_dups)
 
 	@listofblocks = cidrs2contiglists(@blocks);
 
@@ -169,6 +171,10 @@ block.) Eg: 192.168.1.0/24 => 192.168.1.255
 The first IP address following the block. (The IP address following
 the broadcast address.) Eg: 192.168.1.0/24 => 192.168.2.0
 
+=item ->B<first>() & ->B<last>()
+
+Synonyms for ->B<base>() and ->B<broadcast>()
+
 =item ->B<match>($ip)
 
 Returns a true if the IP number $ip matches the given network. That
@@ -278,6 +284,12 @@ data in.
 
 Returns true of the netblock is already in the network table.
 
+=item ->B<tag>($name [, $value])
+
+Tag network blocks with your own data.  The first argument is the
+name of your tag (hash key) and the second argument (if present) is
+the new value.  The old value is returned.
+
 =back
 
 =head1 METHOD/FUNCTION COMBOS
@@ -293,6 +305,18 @@ If more than one block in the table contains the IP address or
 block, the largest network block will be the one returned.
 
 The return value is either a Net::Netmask object or undef.
+
+=item B<cidrs2inverse>(block, @listOfBlocks)
+
+Given a block and a list of blocks, B<cidrs2inverse>() will return
+a list of blocks representing the IP addresses that are in the block
+but not in the list of blocks.  It finds the gaps.
+
+The block will be auto-converted from a string if it isn't already
+a Net::Netmask object.  The list of blocks should be Net::Netmask
+objects.
+
+The return value is a list of Net::Netmask objects.
 
 =back
 
@@ -390,7 +414,14 @@ C<cidrs2contiglists> will return a list with two sublists:
 
 	216.240.36.0/25
 
-The behavior for overlapping blocks is not currently defined.
+Overlapping blocks will be placed in the same sublist.
+
+=item B<cidrs2cidrs>(@listOfBlocks)
+
+C<cidrs2cidrs> will collapse a list of Net::Netmask objects by
+combining adjacent blocks into larger blocks.   It returns a list
+of blocks that covers exactly the same IP space.  Overlapping
+blocks will be collapsed.
 
 =back
 

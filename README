@@ -30,6 +30,7 @@ SYNOPSIS
             my $table = {};
             $block->storeNetblock([$table])
             $block->deleteNetblock([$table])
+            @missingblocks = $block->cidrs2inverse(@blocks)
 
             $block = findNetblock(ip, [$table])
             $block = findOuterNetblock(ip, [$table])
@@ -39,6 +40,7 @@ SYNOPSIS
             @blocks = dumpNetworkTable([$table])
 
             @blocks = range2cidrlist($beginip, $endip);
+            @blocks = cidrs2cidrs(@blocks_with_dups)
 
             @listofblocks = cidrs2contiglists(@blocks);
 
@@ -126,6 +128,8 @@ METHODS
     ->next()                 The first IP address following the block. (The
                              IP address following the broadcast address.)
                              Eg: 192.168.1.0/24 => 192.168.2.0
+
+    ->first() & ->last()     Synonyms for ->base() and ->broadcast()
 
     ->match($ip)             Returns a true if the IP number $ip matches the
                              given network. That is, a true value is
@@ -240,6 +244,11 @@ METHODS
     ->checkNetblock([$t])    Returns true of the netblock is already in the
                              network table.
 
+    ->tag($name [, $value])  Tag network blocks with your own data. The
+                             first argument is the name of your tag (hash
+                             key) and the second argument (if present) is
+                             the new value. The old value is returned.
+
 METHOD/FUNCTION COMBOS
     findOuterNetblock(ip, [$t])
                              Search the table of network blocks (created
@@ -252,6 +261,20 @@ METHOD/FUNCTION COMBOS
 
                              The return value is either a Net::Netmask
                              object or undef.
+
+    cidrs2inverse(block, @listOfBlocks)
+                             Given a block and a list of blocks,
+                             cidrs2inverse() will return a list of blocks
+                             representing the IP addresses that are in the
+                             block but not in the list of blocks. It finds
+                             the gaps.
+
+                             The block will be auto-converted from a string
+                             if it isn't already a Net::Netmask object. The
+                             list of blocks should be Net::Netmask objects.
+
+                             The return value is a list of Net::Netmask
+                             objects.
 
 OVERLOADING
     Overloading doesn't seem to work completeley on perl before version
@@ -339,8 +362,15 @@ FUNCTIONS
 
                                      216.240.36.0/25
 
-                             The behavior for overlapping blocks is not
-                             currently defined.
+                             Overlapping blocks will be placed in the same
+                             sublist.
+
+    cidrs2cidrs(@listOfBlocks)
+                             "cidrs2cidrs" will collapse a list of
+                             Net::Netmask objects by combining adjacent
+                             blocks into larger blocks. It returns a list of
+                             blocks that covers exactly the same IP space.
+                             Overlapping blocks will be collapsed.
 
 LICENSE
     Copyright (C) 1998-2003 David Muir Sharnoff. License hereby granted for

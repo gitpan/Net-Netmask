@@ -50,13 +50,13 @@ my @lookup2 = qw(
  209.157.81.14	209.157.64.0/19
 );
 
-printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4 +1 +1 +26
-	+30 +29 +6*4;
-
 my $debug = 0;
 my $test = 1;
 my $x;
+
+END {
+	$test--; print "1..$test\n";
+}
 
 my ($addr, $mask, $base, $newmask, $bits, $max);
 while (($addr, $mask, $base, $newmask, $bits, $max) = splice(@rtests, 0, 6)) {
@@ -444,16 +444,26 @@ lookouterO($table7, "216.240.40.50/24", undef);
 lookouterO($table7, "216.240.50.150/23", undef);
 lookouterO($table7, "209.157.32.32/8", undef);
 
-
 sub ctest
 {
 	my $a = new Net::Netmask shift;
 	my $b = new Net::Netmask shift;
 
+	print "# ctest($a, $b)\n";
 	print ($a->contains($a) ? "ok $test\n" : "not ok $test\n"); $test++;
 	print ($b->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
 	print ($a->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
 	print (($a->sameblock($b) || ! $b->contains($a)) ? "ok $test\n" : "not ok $test\n"); $test++;
+}
+
+sub ctestno
+{
+	my $a = new Net::Netmask shift;
+	my $b = new Net::Netmask shift;
+
+	print "# ctestno($a, $b)\n";
+	print ($a->contains($b) ? "not ok $test\n" : "ok $test\n"); $test++;
+	print ($b->contains($a) ? "not ok $test\n" : "ok $test\n"); $test++;
 }
 
 ctest("10.20.30.0/24", "10.20.30.0/25");
@@ -462,4 +472,61 @@ ctest("10.20.30.0/24", "10.20.30.128/25");
 ctest("0.0.0.0/8", "0.255.255.255/32");
 ctest("255.255.255.255/32", "255.255.255.255/32");
 ctest("255.255.255.0/24", "255.255.255.255/32");
+
+ctest("66.106.19.144/28", "66.106.19.152/29");
+ctest("66.106.19.144/28", "66.106.19.144/29");
+
+ctestno("66.106.19.144/28", "66.106.19.168/29");
+ctestno("66.106.19.144/28", "198.175.15.10/29");
+ctestno("66.106.19.144/28", "66.106.19.160/29");
+
+sub multinew
+{
+	return map { new Net::Netmask $_ } @_;
+}
+
+(@c) = cidrs2cidrs(multinew(qw(216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24)));
+$dl = dlist(@c);
+print ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+(@c) = cidrs2cidrs(multinew(qw(216.240.32.0/32 216.240.32.1/32 216.240.32.2/32 216.240.32.3/32 216.240.32.4/32)));
+$dl = dlist(@c);
+print ($dl eq '216.240.32.0/30 216.240.32.4/32' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+
+(@c) = cidrs2cidrs(multinew(qw(216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24)));
+$dl = dlist(@c);
+print ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+
+my $block = new Net::Netmask ('172.2.4.0', '255.255.255.0');
+$table = {};
+$block->storeNetblock($table);
+@b = findAllNetblock('172.2.4.1', $table);
+print $#b == 0 ? "ok $test\n" : "not ok $test\n"; $test++;
+
+$block->tag('a', 'b');
+$block->tag('b', 'c');
+$block->tag('c', 'x');
+$block->tag('c', undef);
+$block->tag('d', 'x');
+$block->tag('d');
+
+print $block->tag('a') eq 'b' ? "ok $test\n" : "not ok $test\n"; $test++;
+print $block->tag('b') eq 'c' ? "ok $test\n" : "not ok $test\n"; $test++;
+print(!defined($block->tag('c')) ? "ok $test\n" : "not ok $test\n"); $test++;
+print $block->tag('d') eq 'x' ? "ok $test\n" : "not ok $test\n"; $test++;
+print $block->tag('a') eq 'b' ? "ok $test\n" : "not ok $test\n"; $test++;
+
+(@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24))));
+$dl = dlist(@c);
+print ($dl eq '216.240.33.128/25 216.240.35.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+(@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(215.0.0.0/16 216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24 216.240.45.0/24))));
+$dl = dlist(@c);
+print ($dl eq '216.240.33.128/25 216.240.35.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+(@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(216.240.0.0/16 215.0.0.0/16 216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24 216.240.45.0/24))));
+$dl = dlist(@c);
+print ($dl eq '' ? "ok $test\n" : "not ok $test\n"); $test++;
 

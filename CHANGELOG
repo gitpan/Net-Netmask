@@ -1,3 +1,31 @@
+
+= 2004/04/06 1.9008
+
+Added cidrs2inverse() which will find the gaps in a list of blocks.
+
+Based on a request from Howard Jones <howard.jones at network-i.net>
+the tag() method was added.  It allows you to store your own data in
+a Net::Netmask object.  (Of course, you could have anyway as long as you
+didn't use the keys 'IBASE' or 'BITS')
+
+Long ago, Alexandros M Manoussakis <amm2 at ini.cmu.edu> reported a bug
+that findAllNetblock would often return the same block multiple times.  
+Fixed.
+
+Based on requests from Alexandros M Manoussakis <amm2 at ini.cmu.edu>
+and Lamprecht Andreas <andreas.a.lamprecht at siemens.com> the
+undefined behavior for overlapping blocks with cidrs2contiglists
+is no longer.  Such blocks will be in the same sublist.
+
+Based on a requests from Tom Rudnick <trudnick at itc.nrcs.usda.gov>
+and Anthony Pardini <tony at pardini.org> new function was added:
+cidrs2cidrs().  cidrs2cidrs will condense a set of netblocks by
+combining blocks together that make up larger blocks.
+
+Anthony Pardini <tony at pardini.org>, Frank Tegtmeyer <fte @ fte.to>
+and George Walker <gwalker at irish-times.com> pointed me to a bug
+with the contains() method.  Fixed.
+
 = 2004/01/01 1.9007
 
 At Max Baker <max at warped.org>'s request, the "require 5.6.1" 
