@@ -1,3 +1,19 @@
+= 2003/11/29 1.9005
+
+Matija Papec <matija@post.hinet.hr> suggested that I do a
+Schwartzian transform on the IP address sort function.  I 
+tried it.  It's faster.  Sort function replaced.
+
+Added a sort_network_blocks function.
+
+Added a contains() function to test if one block fits within
+another.
+
+Peter Chen <petechen@netilla.com> was concerned about 
+using an illegal bitmask.  Now checked.
+
+Long ago, Alexandros M Manoussakis <amm2@ini.cmu.edu> noted that
+could be exported even though it was in EXPORT_OK.  Fixed.
 
 = 2003/05/28 1.9004
 

@@ -39,10 +39,14 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	@blocks = findAllNetblock(ip, [$table])
 	if ($block->checkNetblock([$table]) ...
 	$block2 = $block1->findOuterNetblock([$table])
+	@blocks = dumpNetworkTable([$table])
 
 	@blocks = range2cidrlist($beginip, $endip);
 
 	@listofblocks = cidrs2contiglists(@blocks);
+
+	@blocks = sort @blocks
+	@blocks = sort_network_blocks(@blocks)
 
 	@sorted_ip_addrs = sort_by_ip_address(@unsorted_ip_addrs)
 
@@ -241,8 +245,14 @@ they are identical.
 
 Compares two blocks.  The second block will be auto-converted from
 a string if it isn't already a Net::Netmask object.  Returns -1,
-0, or 1 depending on how they compare.  
+0, or 1 depending on which one has the lower base address or which
+one is larger if they have the same base address.
 
+=item ->B<contains>($block)
+
+Compares two blocks.  The second block will be auto-converted from
+a string if it isn't already a Net::Netmask object.  Returns 1
+if the second block fits inside the first block.  Returns 0 otherwise.
 
 =item ->B<storeNetblock>([$t])
 
@@ -312,7 +322,13 @@ This function is included in C<Net::Netmask> simply because
 there doesn't seem to be a better place to put it on CPAN.
 It turns out that there is one method for sorting dotted-quads
 ("a.b.c.d") that is faster than all the rest.  This is that
-way.  Use it as C<sort_by_ip_address(@list_of_ips)>.
+way.  Use it as C<sort_by_ip_address(@list_of_ips)>.  That was
+the theory anyway.  Someone sent a faster version ...
+
+=item B<sort_network_blocks>
+
+This function is a function to sort Net::Netmask objects.  It's
+faster than the simpler C<sort @blocks> that also works.
 
 =item B<findNetblock>(ip, [$t])
 
@@ -376,7 +392,7 @@ The behavior for overlapping blocks is not currently defined.
 
 =head1 LICENSE  
 
-Copyright (C) 1998, 2001 David Muir Sharnoff.  License hereby
+Copyright (C) 1998-2003 David Muir Sharnoff.  License hereby
 granted for anyone to use, modify or redistribute this module at 
 their own risk.  Please feed useful changes back to muir@idiom.com.
 

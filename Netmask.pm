@@ -3,23 +3,24 @@ require 5.006_001;
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9004;
+$VERSION = 1.9005;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(findNetblock findOuterNetblock findAllNetblock
 	cidrs2contiglists range2cidrlist sort_by_ip_address
-	dumpNetworkTable);
+	dumpNetworkTable sort_network_blocks);
 @EXPORT_OK = (@EXPORT, qw(int2quad quad2int %quadmask2bits 
-	%quadhostmask2bits imask sameblock cmpblocks));
+	%quadhostmask2bits imask sameblock cmpblocks contains));
 
 my $remembered = {};
-my %quadmask2bits;
-my %quadhostmask2bits;
 my %imask2bits;
 my %size2bits;
 
-use vars qw($error $debug);
+# our %quadmask2bits;
+# our %quadhostmask2bits;
+
+use vars qw($error $debug %quadmask2bits %quadhostmask2bits);
 $debug = 1;
 
 use strict;
@@ -118,6 +119,13 @@ sub new
 	}
 	$ibase &= imask($bits)
 		if defined $ibase && defined $bits;
+
+	$bits = 0 unless $bits;
+	if ($bits > 32) { 
+		$error = "illegal number of bits: $bits"
+			unless $error;
+		$bits = 32;
+	}
 
 	return bless { 
 		'IBASE' => $ibase,
@@ -461,15 +469,39 @@ sub cmpblocks
 	return cmp_net_netmask_block($this, $other);
 }
 
+sub contains
+{
+	my $this = shift;
+	my $class = ref $this;
+	my $other = (ref $_[0]) ? shift : $class->new(@_);
+	return 0 if $this->{IBASE} > $other->{IBASE};
+	return 0 if $this->{BITS} > $other->{BITS};
+	return 0 if $other->{IBASE} > $this->{IBASE} + $this->size;
+	return 1;
+}
+
 sub cmp_net_netmask_block
 {
 	return ($_[0]->{IBASE} <=> $_[1]->{IBASE} 
 		|| $_[0]->{BITS} <=> $_[1]->{BITS});
 }
 
+sub sort_network_blocks
+{
+	return
+		map $_->[0],
+		sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
+		map [ $_, $_->{IBASE}, $_->{BITS} ], @_;
+
+}
+
 sub sort_by_ip_address
 {
-	return sort { pack("C4",split(/\./,$a)) cmp pack("C4",split(/\./,$b)) } @_
+	return
+		map $_->[0],
+		sort { $a->[1] cmp $b->[1] }
+		map [ $_, pack("C4",split(/\./,$_)) ], @_;
+
 }
 
 BEGIN {

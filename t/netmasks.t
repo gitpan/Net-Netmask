@@ -52,7 +52,7 @@ my @lookup2 = qw(
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
 	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4 +1 +1 +26
-	+30 +29;
+	+30 +29 +6*4;
 
 my $debug = 0;
 my $test = 1;
@@ -435,4 +435,23 @@ lookouterO($table7, "216.240.40.1/29", undef);
 lookouterO($table7, "216.240.40.50/24", undef);
 lookouterO($table7, "216.240.50.150/23", undef);
 lookouterO($table7, "209.157.32.32/8", undef);
+
+
+sub ctest
+{
+	my $a = new Net::Netmask shift;
+	my $b = new Net::Netmask shift;
+
+	print ($a->contains($a) ? "ok $test\n" : "not ok $test\n"); $test++;
+	print ($b->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
+	print ($a->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
+	print (($a->sameblock($b) || ! $b->contains($a)) ? "ok $test\n" : "not ok $test\n"); $test++;
+}
+
+ctest("10.20.30.0/24", "10.20.30.0/25");
+ctest("10.20.30.0/23", "10.20.30.0/24");
+ctest("10.20.30.0/24", "10.20.30.128/25");
+ctest("0.0.0.0/8", "0.255.255.255/32");
+ctest("255.255.255.255/32", "255.255.255.255/32");
+ctest("255.255.255.0/24", "255.255.255.255/32");
 

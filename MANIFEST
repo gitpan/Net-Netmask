@@ -6,3 +6,6 @@ README
 CHANGELOG
 t/netmasks.t
 t/badnets.t
+t/sortspeed-ip.t
+t/sortspeed-blocks.t
+META.yml                                 Module meta-data (added by MakeMaker)
