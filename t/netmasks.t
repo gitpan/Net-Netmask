@@ -49,7 +49,7 @@ my @lookup2 = qw(
 );
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4;
+	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4 +1 +1;
 
 my $debug = 0;
 my $test = 1;
@@ -238,9 +238,12 @@ sub fdel
 	$test++;
 }
 
-
-my (@c) = range2cidrlist('216.240.32.128', '216.240.36.127');
+my (@c) = range2cidrlist("66.33.85.239", "66.33.85.240");
 my $dl = dlist(@c);
+print ($dl eq '66.33.85.239/32 66.33.85.240/32' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+(@c) = range2cidrlist('216.240.32.128', '216.240.36.127');
+$dl = dlist(@c);
 print ($dl eq '216.240.32.128/25 216.240.33.0/24 216.240.34.0/23 216.240.36.0/25' ? "ok $test\n" : "not ok $test\n"); $test++;
 
 my @d;
@@ -259,4 +262,42 @@ sub dlist
 	return join (' ', map { $_->desc() } @b);
 }
 
+sub generate {
+	my $count = shift || 10000;
+	my @list;
+	$list[$count-1]='';  ## preallocate
+	for (my $i=0; $i<$count; $i++) {
+		my $class = int(rand(3));
+		if ($class == 0) {
+			## class A ( 1.0.0.0 - 126.255.255.255 )
+			$list[$i] = int(rand(126))+1;
+		} elsif ($class == 1) {
+			## class B ( 128.0.0.0 - 191.255.255.255 )
+			$list[$i] = int(rand(64))+128;
+		} else {
+			## class C ( 192.0.0.0 - 223.255.255.255 )
+			$list[$i] = int(rand(32))+192;
+		}
+		$list[$i] .= '.' . int(rand(256));
+		$list[$i] .= '.' . int(rand(256));
+		$list[$i] .= '.' . int(rand(256));
+	}
+	return @list;
+}
+
+sub by_net_netmask_block2
+{
+	$a->{'IBASE'} <=> $b->{'IBASE'}
+		|| $a->{'BITS'} <=> $b->{'BITS'};
+}
+
+my (@iplist) = generate(500);
+
+my (@sorted1) = sort_by_ip_address(@iplist);
+
+my (@blist) = map { new Net::Netmask $_ } @iplist;
+my (@clist) = sort by_net_netmask_block2 @blist;
+my (@sorted2) = map { $_->base() } @clist;
+
+print ("@sorted1" eq "@sorted2" ? "ok $test\n" : "not ok $test\n"); $test++;
 

@@ -1,3 +1,24 @@
+= 2001/09/29
+
+Sapient Fridge <sapient.fridge@WaCkY.zzn.com> and Alexander Karptsov
+<karp@visti.net> sent a patch for a bug in range2cidrlist.  The
+last IP in the range was skipped.
+
+Sam Denton <sdenton@wantec.com> requested support for 
+a.b.c.d/mask.mask.mask.mask.
+
+Sam also sent a request that I include the world's fastest
+sort-by-ip-address-in-perl function in Net::Netmask as there didn't
+seem to be a better place to put it.  I've included it.  The function
+in question was found/benchmarked by John Porter and written about
+in the Perl-Users Digest, Issue 3860, Volume 8.
+
+Sam sent a patch to eliminate a couple of trailing spaces in
+the error codes.
+
+My IP address are now 216.240.32/19 instead of 140.174.82/19 and
+thus I've changed the examples in the pod.  :-)
+
 = 2001/05/15
 
 Added deleteNetblock to match storeNetblock.
@@ -42,3 +63,5 @@ Jean-Luc Szpyrka <Jean-Luc.Szpyrka@sophia.inria.fr> requested that a
 function be provided that returns the oposite of a netmask.  Accordingly,
 there is now the hostmask() method.
 
+
+http://faqchest.dynhost.com/prgm/perlu-l/perl-98/perl-9809/perl-980905/perl98093023_24256.html

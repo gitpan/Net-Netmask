@@ -39,6 +39,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 
 	@listofblocks = cidrs2contiglists(@blocks);
 
+	@sorted_ip_addrs = sort_by_ip_address(@unsorted_ip_addrs)
+
 =head1 DESCRIPTION
 
 Net::Netmask parses and understands IPv4 CIDR blocks.  It's built
@@ -48,6 +50,14 @@ methods that operate on a Net::Netmask object.
 There are methods that provide the nearly all bits of information
 about a network block that you might want.
 
+There are also functions to put a network block into a table and
+then later lookup network blocks by IP address in that table.
+There are functions to turn a IP address range into a list of
+CIDR blocks.  There are functions to turn a list of CIDR blocks
+into a list of IP addresses.
+
+There is a function for sorting by text IP address.
+
 =head1 CONSTRUCTING
 
 Net::Netmask objects are created with an IP address and optionally
@@ -55,27 +65,29 @@ a mask.  There are many forms that are recognized:
 
 =over 32
 
-=item '140.174.82.0/24'
+=item '216.240.32.0/24'
 
 The preferred form.
 
-=item '140.174.82.0:255.255.255.0'
+=item '216.240.32.0:255.255.255.0'
 
-=item '140.174.82.0', '255.255.255.0'
+=item '216.240.32.0-255.255.255.0'
 
-=item '140.174.82.0', '0xffffff00'
+=item '216.240.32.0', '255.255.255.0'
 
-=item '140.174.82.0 - 140.174.82.255'
+=item '216.240.32.0', '0xffffff00'
 
-=item '140.174.82.4'
+=item '216.240.32.0 - 216.240.32.255'
+
+=item '216.240.32.4'
 
 A /32 block.
 
-=item '140.174.82'
+=item '216.240.32'
 
 Always a /24 block.
 
-=item '140.174'
+=item '216.240'
 
 Always a /16 block.
 
@@ -83,9 +95,9 @@ Always a /16 block.
 
 Always a /8 block.
 
-=item '140.174.82/24'
+=item '216.240.32/24'
 
-=item '140.174/16'
+=item '216.240/16'
 
 =item 'default'
 
@@ -108,7 +120,7 @@ $Net::Netmask::error.
 
 =item B<base>()
 
-Returns base address of the network block as a string.  Eg: 140.174.82.0.  
+Returns base address of the network block as a string.  Eg: 216.240.32.0.  
 B<Base> does not give an indication of the size of the network block.
 
 =item B<mask>()
@@ -165,9 +177,9 @@ the position inside the block, a good idiom is:
 
 Much of the time, it is not possible to determine the size
 of a network block just from it's base address.  For example,
-with the network block '140.174.82.0/27', if you only had the
-'140.174.82.0' portion you wouldn't be able to tell for certain
-the size of the block.  '140.174.82.0' could be anything from a
+with the network block '216.240.32.0/27', if you only had the
+'216.240.32.0' portion you wouldn't be able to tell for certain
+the size of the block.  '216.240.32.0' could be anything from a
 '/23' to a '/32'.  The B<maxblock>() method gives the size of 
 the larges block that the current block's address would allow it
 to be.  The size is given in bits.  Eg: 23.
@@ -176,8 +188,8 @@ to be.  The size is given in bits.  Eg: 23.
 
 Returns a list of all the IP addresses in the block.  Be very 
 careful not to use this function of large blocks.  The IP
-addresses are returned as strings.  Eg: '140.174.82.0', '140.174.82.1',
-... '140.174.82.255'.
+addresses are returned as strings.  Eg: '216.240.32.0', '216.240.32.1',
+... '216.240.32.255'.
 
 If the optional argument is given, step through the block in
 increments of a given network size.  To step by 4, use a bitstep
@@ -200,9 +212,9 @@ Each tuple contains: the DNS zone name, the last component of
 the first IP address in the block in that zone, the last component
 of the last IP address in the block in that zone.  
 
-Examples: the list returned for the block '140.174.82.0/23' would
+Examples: the list returned for the block '216.240.32.0/23' would
 be: '82.174.140.in-addr.arpa', 0, 255, '83.174.140.in-addr.arpa', 0, 255.
-The list returned for the block '140.174.82.64/27' would be: 
+The list returned for the block '216.240.32.64/27' would be: 
 '82.174.140.in-addr.arpa', 64, 95.
 
 =item B<storeNetblock>([$t])
@@ -230,6 +242,14 @@ data in.
 =head1 FUNCTIONS
 
 =over 25
+
+=item B<sort_by_ip_address>
+
+This function is included in C<Net::Netmask> simply because 
+there doesn't seem to be a better place to put it on CPAN.
+It turns out that there is one method for sorting dotted-quads
+("a.b.c.d") that is faster than all the rest.  This is that
+way.  Use it as C<sort_by_ip_address(@list_of_ips)>.
 
 =item B<findNetblock>(ip, [$t])
 

@@ -3,12 +3,12 @@ require 5.004;
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9;
+$VERSION = 1.9001;
 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(findNetblock findOuterNetblock findAllNetblock
-	cidrs2contiglists range2cidrlist);
+	cidrs2contiglists range2cidrlist sort_by_ip_address);
 @EXPORT_OK = qw(int2quad quad2int %quadmask2bits imask);
 
 my $remembered = {};
@@ -35,7 +35,7 @@ sub new
 
 	if ($net =~ m,^(\d+\.\d+\.\d+\.\d+)/(\d+)$,) {
 		($base, $bits) = ($1, $2);
-	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+):(\d+\.\d+\.\d+\.\d+)$,) {
+	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)[:/](\d+\.\d+\.\d+\.\d+)$,) {
 		$base = $1;
 		my $quadmask = $2;
 		if (exists $quadmask2bits{$quadmask}) {
@@ -87,14 +87,17 @@ sub new
 		$error = "could not find exact fit for $net"
 			if ! defined($bits) && ! defined($error);
 	} else {
-		$error = "could not parse $net $mask";
+		$error = "could not parse $net";
+		$error .= " $mask" if $mask;
 	}
 
 	carp $error if $error && $debug;
 
 	$ibase = quad2int($base || 0) unless $ibase;
-	$error = "could not parse $net $mask" 
-		unless defined($ibase) || defined($error);
+	unless (defined($ibase) || defined($error)) {
+		$error = "could not parse $net";
+		$error .= " $mask" if $mask;
+	}
 	$ibase &= imask($bits)
 		if defined $ibase && defined $bits;
 
@@ -357,7 +360,7 @@ sub range2cidrlist
 		if $start > $end;
 
 	my @result;
-	while ($end > $start) {
+	while ($end >= $start) {
 		my $maxsize = imaxblock($start, 32);
 		my $maxdiff = 32 - int(log($end - $start + 1)/log(2));
 		$maxsize = $maxdiff if $maxsize < $maxdiff;
@@ -372,7 +375,7 @@ sub range2cidrlist
 
 sub cidrs2contiglists
 {
-	my (@cidrs) = sort blocksort @_;
+	my (@cidrs) = sort by_net_netmask_block @_;
 	my @result;
 	while (@cidrs) {
 		my (@r) = shift(@cidrs);
@@ -384,11 +387,17 @@ sub cidrs2contiglists
 	return @result;
 }
 
-sub blocksort
+sub by_net_netmask_block
 {
 	$a->{'IBASE'} <=> $b->{'IBASE'}
 		|| $a->{'BITS'} <=> $b->{'BITS'};
 }
+
+sub sort_by_ip_address
+{
+	return sort { pack("C4",split(/\./,$a)) cmp pack("C4",split(/\./,$b)) } @_
+}
+
 
 BEGIN {
 	for (my $i = 0; $i <= 32; $i++) {
