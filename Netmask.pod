@@ -316,9 +316,9 @@ The behavior for overlapping blocks is not currently defined.
 
 =back
 
-=head1 COPYRIGHT
+=head1 LICENSE  
 
-Copyright (C) 1998, 2001 David Muir Sharnoff.   All rights reserved.
-License hereby granted for anyone to use this module at their own risk.   
-Please feed useful changes back to muir@idiom.com.
+Copyright (C) 1998, 2001 David Muir Sharnoff.  License hereby
+granted for anyone to use, modify or redistribute this module at 
+their own risk.  Please feed useful changes back to muir@idiom.com.
 
