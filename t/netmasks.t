@@ -1,6 +1,8 @@
 #!/usr/local/bin/perl -I. -w
 
 use Net::Netmask;
+use Carp;
+use Carp qw(verbose);
 
 #  addr			mask		base		newmask	     bits  mb
 my @rtests = qw(
@@ -47,7 +49,7 @@ my @lookup2 = qw(
 );
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3;
+	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3 + 25 + 4 + 4;
 
 my $debug = 0;
 my $test = 1;
@@ -171,4 +173,90 @@ my $bks;
 $block = new Net::Netmask '209.157.64.1/32';
 $block->storeNetblock($bks);
 print findNetblock('209.157.64.1',$bks) ? "ok $test\n" : "not ok $test\n"; $test++;
+
+
+my @store3 = qw(
+ 216.240.32.0/19
+ 216.240.40.0/24
+ 216.240.40.0/27
+ 216.240.40.4/30
+);
+my $table3 = {};
+for my $b (@store3) {
+	$x = new Net::Netmask ($b);
+	$x->storeNetblock($table3);
+}
+lookeq($table3, "216.240.40.5", "216.240.40.4/30");
+lookeq($table3, "216.240.40.1", "216.240.40.0/27");
+lookeq($table3, "216.240.40.50", "216.240.40.0/24");
+lookeq($table3, "216.240.50.150", "216.240.32.0/19");
+lookeq($table3, "209.157.32.32", undef);
+fdel("216.240.40.1", "216.240.40.0/27", $table3);
+lookeq($table3, "216.240.40.5", "216.240.40.4/30");
+lookeq($table3, "216.240.40.1", "216.240.40.0/24");
+lookeq($table3, "216.240.40.50", "216.240.40.0/24");
+lookeq($table3, "216.240.50.150", "216.240.32.0/19");
+lookeq($table3, "209.157.32.32", undef);
+fdel("216.240.50.150", "216.240.32.0/19", $table3);
+lookeq($table3, "216.240.40.5", "216.240.40.4/30");
+lookeq($table3, "216.240.40.1", "216.240.40.0/24");
+lookeq($table3, "216.240.40.50", "216.240.40.0/24");
+lookeq($table3, "216.240.50.150", undef);
+lookeq($table3, "209.157.32.32", undef);
+fdel("216.240.40.4", "216.240.40.4/30", $table3);
+lookeq($table3, "216.240.40.5", "216.240.40.0/24");
+lookeq($table3, "216.240.40.1", "216.240.40.0/24");
+lookeq($table3, "216.240.40.50", "216.240.40.0/24");
+lookeq($table3, "216.240.50.150", undef);
+lookeq($table3, "209.157.32.32", undef);
+fdel("216.240.40.4", "216.240.40.0/24", $table3);
+lookeq($table3, "216.240.40.5", undef);
+lookeq($table3, "216.240.40.1", undef);
+lookeq($table3, "216.240.40.50", undef);
+lookeq($table3, "216.240.50.150", undef);
+lookeq($table3, "209.157.32.32", undef);
+
+sub lookeq
+{
+	my ($table, $value, $result) = @_;
+	my $found = findNetblock($value, $table);
+	if ($result) {
+#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
+		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+	} else {
+		print ($found ? "not ok $test\n" : "ok $test\n");
+	}
+	$test++;
+}
+sub fdel
+{
+	my ($value, $result, $table) = @_;
+	my $found = findNetblock($value, $table);
+#print "search for $value, found and deleting @{[ $found->desc ]} eq $result\n";
+	print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+	$found->deleteNetblock($table);
+	$test++;
+}
+
+
+my (@c) = range2cidrlist('216.240.32.128', '216.240.36.127');
+my $dl = dlist(@c);
+print ($dl eq '216.240.32.128/25 216.240.33.0/24 216.240.34.0/23 216.240.36.0/25' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+my @d;
+@d = (@c[0,1,3]);
+
+my (@e) = cidrs2contiglists(@d);
+
+print (@e == 2 ? "ok $test\n" : "not ok $test\n"); $test++;
+
+print (dlist(@{$e[0]}) eq '216.240.32.128/25 216.240.33.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+print (dlist(@{$e[1]}) eq '216.240.36.0/25' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+sub dlist 
+{
+	my (@b) = @_;
+	return join (' ', map { $_->desc() } @b);
+}
+
 

@@ -3,17 +3,21 @@ require 5.004;
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.8;
+$VERSION = 1.9;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(findNetblock);
+@EXPORT = qw(findNetblock findOuterNetblock findAllNetblock
+	cidrs2contiglists range2cidrlist);
 @EXPORT_OK = qw(int2quad quad2int %quadmask2bits imask);
 
 my $remembered = {};
 my %quadmask2bits;
 my %imask2bits;
 my %size2bits;
+
+use vars qw($error $debug);
+$debug = 1;
 
 use strict;
 use Carp;
@@ -26,8 +30,8 @@ sub new
 
 	my $base;
 	my $bits;
-	my $error;
 	my $ibase;
+	undef $error;
 
 	if ($net =~ m,^(\d+\.\d+\.\d+\.\d+)/(\d+)$,) {
 		($base, $bits) = ($1, $2);
@@ -72,43 +76,53 @@ sub new
 		($base, $bits) = ("$1.0.0", $2);
 	} elsif ($net eq 'default') {
 		($base, $bits) = ("0.0.0.0", 0);
-	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)-(\d+\.\d+\.\d+\.\d+)$,) {
+	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)$,) {
 		# whois format
 		$ibase = quad2int($1);
-		my $end = quad2int($2) + 1;
-		my $diff = $end - $ibase;
+		my $end = quad2int($2);
+		$error = "illegal dotted quad: $net" 
+			unless defined($ibase) && defined($end);
+		my $diff = ($end || 0) - ($ibase || 0) + 1;
 		$bits = $size2bits{$diff};
 		$error = "could not find exact fit for $net"
-			unless defined $bits;
+			if ! defined($bits) && ! defined($error);
 	} else {
 		$error = "could not parse $net $mask";
 	}
 
-	warn $error if $error;
+	carp $error if $error && $debug;
 
-	$ibase = quad2int($base) unless $ibase;
-	$ibase &= imask($bits);
+	$ibase = quad2int($base || 0) unless $ibase;
+	$error = "could not parse $net $mask" 
+		unless defined($ibase) || defined($error);
+	$ibase &= imask($bits)
+		if defined $ibase && defined $bits;
 
 	return bless { 
 		'IBASE' => $ibase,
 		'BITS' => $bits, 
-		'ERROR' => $error,
+		( $error ? ( 'ERROR' => $error ) : () ),
 	};
 }
+
+sub new2
+{
+	local($debug) = 0;
+	my $net = new(@_);
+	return undef if $error;
+	return $net;
+}
+
+sub errstr { return $error; }
+sub debug  { my $this = shift; return (@_ ? $debug = shift : $debug) }
 
 sub base { my ($this) = @_; return int2quad($this->{'IBASE'}); }
 sub bits { my ($this) = @_; return $this->{'BITS'}; }
 sub size { my ($this) = @_; return 2**(32- $this->{'BITS'}); }
 sub next { my ($this) = @_; int2quad($this->{'IBASE'} + $this->size()); }
 
-#sub match {
-#	my $this = shift;
-#	my $ibase = quad2int(shift);
-#	return ($this->{'IBASE'} <= $ibase 
-#		and $ibase < ($this->{'IBASE'} + $this->size()));
-#}
-
-sub broadcast {
+sub broadcast 
+{
 	my($this) = @_;
 	int2quad($this->{'IBASE'} + $this->size() - 1);
 }
@@ -140,9 +154,12 @@ sub hostmask
 
 sub nth
 {
-	my ($this, $index) = @_;
+	my ($this, $index, $bitstep) = @_;
 	my $size = $this->size();
 	my $ibase = $this->{'IBASE'};
+	$bitstep = 32 unless $bitstep;
+	my $increment = 2**(32-$bitstep);
+	$index *= $increment;
 	$index += $size if $index < 0;
 	return undef if $index < 0;
 	return undef if $index >= $size;
@@ -151,11 +168,13 @@ sub nth
 
 sub enumerate
 {
-	my ($this) = @_;
+	my ($this, $bitstep) = @_;
+	$bitstep = 32 unless $bitstep;
 	my $size = $this->size();
+	my $increment = 2**(32-$bitstep);
 	my @ary;
 	my $ibase = $this->{'IBASE'};
-	for (my $i = 0; $i < $size; $i++) {
+	for (my $i = 0; $i < $size; $i += $increment) {
 		push(@ary, int2quad($ibase+$i));
 	}
 	return @ary;
@@ -178,7 +197,11 @@ sub inaddr
 
 sub quad2int
 {
-	return unpack("N", pack("C4", split(/\./, $_[0])));
+	my @bytes = split(/\./,$_[0]);
+
+	return undef unless @bytes == 4 && ! grep {!(/\d+$/ && $_<256)} @bytes;
+
+	return unpack("N",pack("C4",@bytes));
 }
 
 sub int2quad
@@ -202,6 +225,27 @@ sub storeNetblock
 	$t->{$base}->[$i] = $this;
 }
 
+sub deleteNetblock
+{
+	my ($this, $t) = @_;
+	$t = $remembered unless $t;
+
+	my $base = $this->{'IBASE'};
+
+	my $mb = maxblock($this);
+	my $b = $this->{'BITS'};
+	my $i = $b - $mb;
+
+	return unless defined $t->{$base};
+
+	undef $t->{$base}->[$i];
+
+	for my $x (@{$t->{$base}}) {
+		return if $x;
+	}
+	delete $t->{$base};
+}
+
 sub findNetblock
 {
 	my ($ipquad, $t) = @_;
@@ -212,18 +256,64 @@ sub findNetblock
 	for (my $b = 32; $b >= 0; $b--) {
 		my $im = imask($b);
 		my $nb = $ip & $im;
-		if (exists $t->{$nb}) {
-			my $mb = imaxblock($nb, 32);
-			my $i = $b - $mb;
-			confess "$mb, $b, $ipquad, $nb" if $i < 0;
-			confess "$mb, $b, $ipquad, $nb" if $i > 32;
-			while ($i >= 0) {
-				return $t->{$nb}->[$i]
-					if defined $t->{$nb}->[$i];
-				$i--;
-			}
+		next unless exists $t->{$nb};
+		my $mb = imaxblock($nb, 32);
+		my $i = $b - $mb;
+		confess "$mb, $b, $ipquad, $nb" if $i < 0;
+		confess "$mb, $b, $ipquad, $nb" if $i > 32;
+		while ($i >= 0) {
+			return $t->{$nb}->[$i]
+				if defined $t->{$nb}->[$i];
+			$i--;
 		}
 	}
+}
+
+sub findOuterNetblock
+{
+	my ($ipquad, $t) = @_;
+	$t = $remembered unless $t;
+
+	my $ip = quad2int($ipquad);
+
+	for (my $b = 0; $b <= 32; $b++) {
+		my $im = imask($b);
+		my $nb = $ip & $im;
+		next unless exists $t->{$nb};
+		my $mb = imaxblock($nb, 32);
+		my $i = $b - $mb;
+		confess "$mb, $b, $ipquad, $nb" if $i < 0;
+		confess "$mb, $b, $ipquad, $nb" if $i > 32;
+		while ($i >= 0) {
+			return $t->{$nb}->[$i]
+				if defined $t->{$nb}->[$i];
+			$i--;
+		}
+	}
+}
+
+sub findAllNetblock
+{
+	my ($ipquad, $t) = @_;
+	$t = $remembered unless $t;
+	my @ary ;
+	my $ip = quad2int($ipquad);
+
+	for (my $b = 32; $b >= 0; $b--) {
+		my $im = imask($b);
+		my $nb = $ip & $im;
+		next unless exists $t->{$nb};
+		my $mb = imaxblock($nb, 32);
+		my $i = $b - $mb;
+		confess "$mb, $b, $ipquad, $nb" if $i < 0;
+		confess "$mb, $b, $ipquad, $nb" if $i > 32;
+		while ($i >= 0) {
+			push(@ary,  $t->{$nb}->[$i])
+				if defined $t->{$nb}->[$i];
+			$i--;
+		}
+	}
+	return @ary;
 }
 
 sub match
@@ -256,7 +346,49 @@ sub imaxblock
 	return $tbit;
 }
 
+sub range2cidrlist
+{
+	my ($startip, $endip) = @_;
 
+	my $start = quad2int($startip);
+	my $end = quad2int($endip);
+
+	($start, $end) = ($end, $start)
+		if $start > $end;
+
+	my @result;
+	while ($end > $start) {
+		my $maxsize = imaxblock($start, 32);
+		my $maxdiff = 32 - int(log($end - $start + 1)/log(2));
+		$maxsize = $maxdiff if $maxsize < $maxdiff;
+		push (@result, bless {
+			'IBASE' => $start,
+			'BITS' => $maxsize
+		});
+		$start += 2**(32-$maxsize);
+	}
+	return @result;
+}
+
+sub cidrs2contiglists
+{
+	my (@cidrs) = sort blocksort @_;
+	my @result;
+	while (@cidrs) {
+		my (@r) = shift(@cidrs);
+		push(@r, shift(@cidrs))
+			while $cidrs[0] && $r[$#r]->{'IBASE'} + $r[$#r]->size 
+				== $cidrs[0]->{'IBASE'};
+		push(@result, [@r]);
+	}
+	return @result;
+}
+
+sub blocksort
+{
+	$a->{'IBASE'} <=> $b->{'IBASE'}
+		|| $a->{'BITS'} <=> $b->{'BITS'};
+}
 
 BEGIN {
 	for (my $i = 0; $i <= 32; $i++) {
@@ -265,3 +397,4 @@ BEGIN {
 		$size2bits{ 2**(32-$i) } = $i;
 	}
 }
+1;

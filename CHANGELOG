@@ -1,3 +1,21 @@
+= 2001/05/15
+
+Added deleteNetblock to match storeNetblock.
+
+Carol Lerche <cafl@securify.com> contributed findOuterNetblock()
+and findAllNetblocks().
+
+Kevin Baker <kevin@apnic.net> sent in patches that suggested a new
+handling of error conditions; extra error conditions to test for; and
+a test script to exercise the error conditions.
+
+Bruce Peikon <Bruce.Peikon@msdw.com> sent a contribution which suggested
+that enumerate could do so by network.
+
+Dominic Mitchell <dom@semantico.com> sent in code that suggested the 
+creation of cidrs2contiglists() and range2cidrlist().
+
+A couple of documentation fixes from Igor Vinokurov <igor@rtsnet.ru>.
 
 = 1999/09/20
 
