@@ -44,7 +44,7 @@ my @lookup2 = qw(
  209.157.81.14	209.157.64.0/19
 );
 
-printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 
+printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6
 	+ ($#lookup+1)/2 + ($#lookup2+1)/2;
 
 my $debug = 0;
@@ -66,16 +66,39 @@ while (($addr, $mask, $base, $newmask, $bits, $max) = splice(@rtests, 0, 6)) {
 	print $x->bits() == $bits ? "ok $test\n" : "not ok $test\n"; $test++;
 }
 
+my @y;
+
 $x = new Net::Netmask ('209.157.64.0/19');
 print $x->size() == 8192 ? "ok $test\n" : "not ok $test\n"; $test++;
+
+@y = $x->inaddr();
+print STDERR "REVERSE: @y\n" if $debug;
+print $y[0] eq '64.157.209.in-addr.arpa' 
+	? "ok $test\n" : "not ok $test\n"; $test++;
+print $y[31*3] eq '95.157.209.in-addr.arpa' 
+	? "ok $test\n" : "not ok $test\n"; $test++;
+print defined($y[32*3]) ? "not ok $test\n" : "ok $test\n"; $test++;
 
 $x = new Net::Netmask ('140.174.82.4/32');
 print $x->size() == 1 ? "ok $test\n" : "not ok $test\n"; $test++;
 
+# perl bug: cannot just print this.
+my $p = ($x->inaddr())[0] eq '82.174.140.in-addr.arpa' 
+	?  "ok $test\n"
+	: "not ok $test\n";
+print $p;
+printf STDERR "REVERSE$test %s\n", $x->inaddr() if $debug;
+$test++;
+
+$x = new Net::Netmask ('140.174.82.64/27');
+print (($x->inaddr())[1] == 64 ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($x->inaddr())[2] == 95 ? "ok $test\n" : "not ok $test\n"); $test++;
+@y = $x->inaddr();
+print STDERR "Y$test @y\n" if $debug;
+
 $x = new Net::Netmask ('default');
 print $x->size() == 4294967296 ? "ok $test\n" : "not ok $test\n"; $test++;
 
-my @y;
 $x = new Net::Netmask ('209.157.64.0/27');
 @y = $x->enumerate();
 print $y[0] eq '209.157.64.0' ? "ok $test\n" : "not ok $test\n"; $test++;

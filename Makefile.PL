@@ -6,6 +6,6 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
 	'NAME' => 'Net::Netmask',
 	'DISTNAME' => 'Net-Netmask',
-	'VERSION' => '1.0',
+	'VERSION' => '1.2',
 	'dist'   => {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );

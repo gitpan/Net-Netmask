@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.0;
+$VERSION = 1.2;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -116,6 +116,21 @@ sub enumerate
 	my $ibase = $this->{'IBASE'};
 	for (my $i = 0; $i < $size; $i++) {
 		push(@ary, int2quad($ibase+$i));
+	}
+	return @ary;
+}
+
+sub inaddr
+{
+	my ($this) = @_;
+	my $ibase = $this->{'IBASE'};
+	my $blocks = int($this->size()/256);
+	return (join('.',unpack('xC3', pack('V', $ibase))).".in-addr.arpa",
+		$ibase%256, $ibase%256+$this->size()-1) if $blocks == 0;
+	my @ary;
+	for (my $i = 0; $i < $blocks; $i++) {
+		push(@ary, join('.',unpack('xC3', pack('V', $ibase+$i*256)))
+			.".in-addr.arpa", 0, 255);
 	}
 	return @ary;
 }

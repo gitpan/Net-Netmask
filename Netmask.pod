@@ -17,6 +17,8 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 
 	for $ip ($block->enumerate()) { }
 
+	for $zone ($block->inaddr()) { }
+
 	my $table = {};
 	$block->storeNetblock()
 	$block->storeNetblock($table)
@@ -115,6 +117,21 @@ Returns a list of all the IP addresses in the block.  Be very
 careful not to use this function of large blocks.  The IP
 addresses are returned as strings.  Eg: '140.174.82.0', '140.174.82.1',
 ... '140.174.82.255'.
+
+=item B<inaddr>()
+
+Returns an inline list of tuples.  There is a tuple for each
+DNS zone name in the block.  If the block is smaller than a /24, 
+then the zone of the enclosing /24 is returned. 
+
+Each tuple contains: the DNS zone name, the last component of
+the first IP address in the block in that zone, the last component
+of the last IP address in the block in that zone.  
+
+Examples: the list returned for the block '140.174.82.0/23' would
+be: '82.174.140.in-addr.arpa', 0, 255, '83.174.140.in-addr.arpa', 0, 255.
+The list returned for the block '140.174.82.64/27' would be: 
+'82.174.140.in-addr.arpa', 64, 95.
 
 =item B<storeNetblock>([$t])
 
