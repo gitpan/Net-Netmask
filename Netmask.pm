@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9009;
+$VERSION = 1.9011;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -16,6 +16,7 @@ require Exporter;
 my $remembered = {};
 my %imask2bits;
 my %size2bits;
+my @imask;
 
 # our %quadmask2bits;
 # our %quadhostmask2bits;
@@ -105,7 +106,7 @@ sub new
 		$error = "could not find exact fit for $net"
 			if ! defined $error && (
 				! defined $bits
-				|| ($ibase & ~imask($bits)));
+				|| ($ibase & ~$imask[$bits]));
 	} else {
 		$error = "could not parse $net";
 		$error .= " $mask" if $mask;
@@ -118,7 +119,7 @@ sub new
 		$error = "could not parse $net";
 		$error .= " $mask" if $mask;
 	}
-	$ibase &= imask($bits)
+	$ibase &= $imask[$bits]
 		if defined $ibase && defined $bits;
 
 	$bits = 0 unless $bits;
@@ -174,14 +175,14 @@ sub mask
 {
 	my ($this) = @_;
 
-	return int2quad ( imask ($this->{'BITS'}));
+	return int2quad ( $imask[$this->{'BITS'}]);
 }
 
 sub hostmask
 {
 	my ($this) = @_;
 
-	return int2quad ( ~ imask ($this->{'BITS'}));
+	return int2quad ( ~ $imask[$this->{'BITS'}]);
 }
 
 sub nth
@@ -296,14 +297,12 @@ sub findNetblock
 	my %done;
 
 	for (my $b = 32; $b >= 0; $b--) {
-		my $im = imask($b);
-		my $nb = $ip & $im;
+		my $nb = $ip & $imask[$b];
 		next unless exists $t->{$nb};
 		my $mb = imaxblock($nb, 32);
 		next if $done{$mb}++;
 		my $i = $b - $mb;
-		confess "$mb, $b, $ipquad, $nb" if $i < 0;
-		confess "$mb, $b, $ipquad, $nb" if $i > 32;
+		confess "$mb, $b, $ipquad, $nb" if ($i < 0 or $i > 32);
 		while ($i >= 0) {
 			return $t->{$nb}->[$i]
 				if defined $t->{$nb}->[$i];
@@ -328,8 +327,7 @@ sub findOuterNetblock
 	}
 
 	for (my $b = 0; $b <= $mask; $b++) {
-		my $im = imask($b);
-		my $nb = $ip & $im;
+		my $nb = $ip & $imask[$b];;
 		next unless exists $t->{$nb};
 		my $mb = imaxblock($nb, $mask);
 		my $i = $b - $mb;
@@ -352,8 +350,7 @@ sub findAllNetblock
 	my %done;
 
 	for (my $b = 32; $b >= 0; $b--) {
-		my $im = imask($b);
-		my $nb = $ip & $im;
+		my $nb = $ip & $imask[$b];
 		next unless exists $t->{$nb};
 		my $mb = imaxblock($nb, 32);
 		next if $done{$mb}++;
@@ -403,7 +400,7 @@ sub match
 {
 	my ($this, $ip) = @_;
 	my $i = quad2int($ip);
-	my $imask = imask($this->{BITS});
+	my $imask = $imask[$this->{BITS}];
 	if (($i & $imask) == $this->{IBASE}) {
 		return (($i & ~ $imask) || "0 ");
 	} else {
@@ -422,7 +419,7 @@ sub imaxblock
 	my ($ibase, $tbit) = @_;
 	confess unless defined $ibase;
 	while ($tbit > 0) {
-		my $im = imask($tbit-1);
+		my $im = $imask[$tbit-1];
 		last if (($ibase & $im) != $ibase);
 		$tbit--;
 	}
@@ -576,11 +573,11 @@ sub sort_by_ip_address
 
 BEGIN {
 	for (my $i = 0; $i <= 32; $i++) {
-		$imask2bits{imask($i)} = $i;
-		$quadmask2bits{int2quad(imask($i))} = $i;
-		$quadhostmask2bits{int2quad(~imask($i))} = $i;
+		$imask[$i] = imask($i);
+		$imask2bits{$imask[$i]} = $i;
+		$quadmask2bits{int2quad($imask[$i])} = $i;
+		$quadhostmask2bits{int2quad(~$imask[$i])} = $i;
 		$size2bits{ 2**(32-$i) } = $i;
 	}
 }
 1;
-

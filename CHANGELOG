@@ -1,4 +1,12 @@
 
+= 2004/05/31 1.9011
+
+Some speed improvements from Todd R. Eigenschink <todd at tekinteractive.com>
+
+= 2004/04/12 1.9009
+
+Fix to netmasks.t for compatability with older perls
+
 = 2004/04/06 1.9008
 
 Added cidrs2inverse() which will find the gaps in a list of blocks.
