@@ -1,4 +1,9 @@
 
+= 1999/09/15
+
+Added support for understanding network blocks in the form that the
+whois database uses: FirstIP-LastIP.
+
 = 1999/03/27
 
 Jochen Wiedmann <joe@ispsoft.de> contributed a function to test an IP

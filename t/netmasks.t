@@ -13,6 +13,7 @@ my @rtests = qw(
  140.174			u	140.174.0.0	255.255.0.0	16 15
  10				u	10.0.0.0	255.0.0.0	8  7
  209.157.64/19			u	209.157.64.0	255.255.224.0	19 18
+ 209.157.64.0-209.157.95.255	u	209.157.64.0	255.255.224.0	19 18
  209.157/17			u	209.157.0.0	255.255.128.0	17 16
  default			u	0.0.0.0		0.0.0.0		0  0
 );
@@ -46,7 +47,7 @@ my @lookup2 = qw(
 );
 
 printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 4
-	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 2;
+	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3;
 
 my $debug = 0;
 my $test = 1;
@@ -157,4 +158,9 @@ print (($newmask->nth(1) eq '192.168.1.1') ? "ok $test\n" : "not ok $test\n"); $
 print (($newmask->nth(-1) eq '192.168.1.255') ? "ok $test\n" : "not ok $test\n"); $test++;
 print (($newmask->nth(-2) eq '192.168.1.254') ? "ok $test\n" : "not ok $test\n"); $test++;
 print (($newmask->nth(0) eq '192.168.1.0') ? "ok $test\n" : "not ok $test\n"); $test++;
+
+my $bks;
+$block = new Net::Netmask '209.157.64.1/32';
+$block->storeNetblock($bks);
+print findNetblock('209.157.64.1',$bks) ? "ok $test\n" : "not ok $test\n"; $test++;
 

@@ -1,8 +1,9 @@
+require 5.004;
 
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.6;
+$VERSION = 1.7;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -12,6 +13,7 @@ require Exporter;
 my $remembered = {};
 my %quadmask2bits;
 my %imask2bits;
+my %size2bits;
 
 use strict;
 use Carp;
@@ -70,6 +72,14 @@ sub new
 		($base, $bits) = ("$1.0.0", $2);
 	} elsif ($net eq 'default') {
 		($base, $bits) = ("0.0.0.0", 0);
+	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)-(\d+\.\d+\.\d+\.\d+)$,) {
+		# whois format
+		$ibase = quad2int($1);
+		my $end = quad2int($2) + 1;
+		my $diff = $end - $ibase;
+		$bits = $size2bits{$diff};
+		$error = "could not find exact fit for $net"
+			unless defined $bits;
 	} else {
 		$error = "could not parse $net $mask";
 	}
@@ -240,5 +250,6 @@ BEGIN {
 	for (my $i = 0; $i <= 32; $i++) {
 		$imask2bits{imask($i)} = $i;
 		$quadmask2bits{int2quad(imask($i))} = $i;
+		$size2bits{ 2**(32-$i) } = $i;
 	}
 }

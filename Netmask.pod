@@ -9,6 +9,7 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	$block = new Net::Netmask (network block)
 	$block = new Net::Netmask (network block, netmask)
 
+	print $block->desc() 		# a.b.c.d/bits
 	print $block->base() 
 	print $block->mask() 
 	print $block->hostmask() 
