@@ -1,4 +1,8 @@
 
+= 1999/09/20
+
+Modified the match() method to return the position within the block.
+
 = 1999/09/15
 
 Added support for understanding network blocks in the form that the

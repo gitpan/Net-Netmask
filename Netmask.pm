@@ -3,7 +3,7 @@ require 5.004;
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.7;
+$VERSION = 1.8;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -101,12 +101,12 @@ sub bits { my ($this) = @_; return $this->{'BITS'}; }
 sub size { my ($this) = @_; return 2**(32- $this->{'BITS'}); }
 sub next { my ($this) = @_; int2quad($this->{'IBASE'} + $this->size()); }
 
-sub match {
-	my $this = shift;
-	my $ibase = quad2int(shift);
-	return ($this->{'IBASE'} <= $ibase 
-		and $ibase < ($this->{'IBASE'} + $this->size()));
-}
+#sub match {
+#	my $this = shift;
+#	my $ibase = quad2int(shift);
+#	return ($this->{'IBASE'} <= $ibase 
+#		and $ibase < ($this->{'IBASE'} + $this->size()));
+#}
 
 sub broadcast {
 	my($this) = @_;
@@ -223,6 +223,18 @@ sub findNetblock
 				$i--;
 			}
 		}
+	}
+}
+
+sub match
+{
+	my ($this, $ip) = @_;
+	my $i = quad2int($ip);
+	my $imask = imask($this->{BITS});
+	if (($i & $imask) == $this->{IBASE}) {
+		return (($i & ~ $imask) || "0 ");
+	} else {
+		return 0;
 	}
 }
 

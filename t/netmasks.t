@@ -46,7 +46,7 @@ my @lookup2 = qw(
  209.157.81.14	209.157.64.0/19
 );
 
-printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 4
+printf "1..%d\n", ($#rtests+1) / 6 * 4 + 3 + 3 + 6 + 1 + 7 + 3 + 11
 	+ ($#lookup+1)/2 + ($#lookup2+1)/2 + 3;
 
 my $debug = 0;
@@ -158,6 +158,14 @@ print (($newmask->nth(1) eq '192.168.1.1') ? "ok $test\n" : "not ok $test\n"); $
 print (($newmask->nth(-1) eq '192.168.1.255') ? "ok $test\n" : "not ok $test\n"); $test++;
 print (($newmask->nth(-2) eq '192.168.1.254') ? "ok $test\n" : "not ok $test\n"); $test++;
 print (($newmask->nth(0) eq '192.168.1.0') ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->match('192.168.1.1') == 1) ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->match('192.168.1.100') == 100) ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->match('192.168.1.255') == 255) ? "ok $test\n" : "not ok $test\n"); $test++;
+
+print (($newmask->match('192.168.2.1') == 0) ? "ok $test\n" : "not ok $test\n"); $test++;
+print (!($newmask->match('192.168.2.1')) ? "ok $test\n" : "not ok $test\n"); $test++;
+print (((0+$newmask->match('192.168.1.0')) == 0) ? "ok $test\n" : "not ok $test\n"); $test++;
+print (($newmask->match('192.168.1.0')) ? "ok $test\n" : "not ok $test\n"); $test++;
 
 my $bks;
 $block = new Net::Netmask '209.157.64.1/32';
