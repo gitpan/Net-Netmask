@@ -1,5 +1,7 @@
 #!/usr/bin/perl -I. -w
 
+print "1..267\n";
+
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
 use Carp;
@@ -53,10 +55,6 @@ my @lookup2 = qw(
 my $debug = 0;
 my $test = 1;
 my $x;
-
-END {
-	$test--; print "1..$test\n";
-}
 
 my ($addr, $mask, $base, $newmask, $bits, $max);
 while (($addr, $mask, $base, $newmask, $bits, $max) = splice(@rtests, 0, 6)) {
