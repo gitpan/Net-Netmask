@@ -1,3 +1,8 @@
+= 2004/01/01 1.9007
+
+At Max Baker <max at warped.org>'s request, the "require 5.6.1" 
+was removed for better compatability with older perl versions.
+
 = 2003/12/05 1.9006
 
 Removed '@'s from this file.

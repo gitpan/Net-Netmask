@@ -254,6 +254,10 @@ METHOD/FUNCTION COMBOS
                              object or undef.
 
 OVERLOADING
+    Overloading doesn't seem to work completeley on perl before version
+    5.6.1. The test suite doesn't test overloading before that. At least for
+    sort.
+
     ""                       Strinification is overloaded to be the ->desc()
                              method.
 

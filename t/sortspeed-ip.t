@@ -15,15 +15,18 @@ sub mysortfunc
 	return sort { pack("C4",split(/\./,$a)) cmp pack("C4",split(/\./,$b)) } @_
 }
 
-unless (-t STDOUT) {
-	print "1..0 # Skipped: this is for people looking for faster sorts\n";
-	exit(0);
+BEGIN {
+	unless (-t STDOUT) {
+		print "1..0 # Skipped: this is for people looking for faster sorts\n";
+		exit(0);
+	}
 }
 
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
 use Carp;
 use Carp qw(verbose);
+
 use Benchmark qw(cmpthese);
 
 

@@ -310,13 +310,21 @@ my (@blist) = map { new Net::Netmask $_ } @iplist;
 my (@clist) = sort @blist;
 my (@sorted2) = map { $_->base() } @clist;
 
-print ("@sorted1" eq "@sorted2" ? "ok $test\n" : "not ok $test\n"); $test++;
+if ($] < 5.006_001) {
+	print "ok $test # skip Overload not supported at $[\n"; $test++;
+} else {
+	print ("@sorted1" eq "@sorted2" ? "ok $test\n" : "not ok $test\n"); $test++;
+}
 
 my (@dlist) = sort @blist;
 my (@sorted3) = map { $_->base() } @dlist;
 
-print "AT TEST $test\n";
-print ("@sorted1" eq "@sorted3" ? "ok $test\n" : "not ok $test\n"); $test++;
+if ($] < 5.006_001) {
+	print "ok $test # skip Overload not supported at $[\n"; $test++;
+} else {
+	print "# AT TEST $test\n";
+	print ("@sorted1" eq "@sorted3" ? "ok $test\n" : "not ok $test\n"); $test++;
+}
 
 my $q144 = new Net::Netmask '216.240.32.0/25';
 

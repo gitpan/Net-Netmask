@@ -15,9 +15,11 @@ sub mysortfunc
 	return sort @_;
 }
 
-unless (-t STDOUT) {
-	print "1..0 # Skipped: this is for people looking for faster sorts\n";
-	exit(0);
+BEGIN {
+	unless (-t STDOUT) {
+		print "1..0 # Skipped: this is for people looking for faster sorts\n";
+		exit(0);
+	}
 }
 
 use Net::Netmask;
