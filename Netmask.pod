@@ -1,0 +1,151 @@
+=head1 NAME
+
+Net::Netmask - parse, manipulate and lookup IP network blocks
+
+=head1 SYNOPSIS
+
+	use Net::Netmask;
+
+	$block = new Net::Netmask (network block)
+	$block = new Net::Netmask (network block, netmask)
+
+	print $block->base() 
+	print $block->mask() 
+	print $block->bits() 
+	print $block->size() 
+	print $block->maxblock()
+
+	for $ip ($block->enumerate()) { }
+
+	my $table = {};
+	$block->storeNetblock()
+	$block->storeNetblock($table)
+
+	$block = findNetblock(ip)
+	$block = findNetblock(ip, $table)
+
+=head1 DESCRIPTION
+
+Net::Netblock parses and understand IPv4 CIDR blocks.  It's built
+with an object-oriented interface.  Nearly all functions are 
+methods that operate on a Net::Netblock object.
+
+There are methods that provide the nearly all bits of information
+about a network block that you might want.
+
+=head1 CONSTRUCTING
+
+Net::Netmask objects are created with an IP address and optionally
+a mask.  There are many forms that are recognized:
+
+=over 32
+
+=item '140.174.82.0/24'
+
+The preferred form.
+
+=item '140.174.82.0:255.255.255.0'
+
+=item '140.174.82.0', '255.255.255.0'
+
+=item '140.174.82.0', '0xffffff00'
+
+=item '140.174.82.4'
+
+A /32 block.
+
+=item '140.174.82'
+
+Always a /24 block.
+
+=item '140.174'
+
+Always a /16 block.
+
+=item '140'
+
+Always a /8 block.
+
+=item '140.174.82/24'
+
+=item '140.174/16'
+
+=item 'default'
+
+0.0.0.0/0 (the default route)
+
+=back
+
+=head1 METHODS
+
+=over 25
+
+=item B<base>()
+
+Returns base address of the network block as a string.  Eg: 140.174.82.0.  
+B<Base> does not give an indication of the size of the network block.
+
+=item B<mask>()
+
+Returns the netmask as a string. Eg: 255.255.255.0. 
+
+=item B<bits>()
+
+Returns the netmask as a number of bits in the network
+portion of the address for this block.  Eg: 24.
+
+=item B<size>()
+
+Returns the number of IP addresses in a block.  Eg: 256.
+
+=item B<maxblock>()
+
+Much of the time, it is not possible to determine the size
+of a network block just from it's base address.  For example,
+with the network block '140.174.82.0/27', if you only had the
+'140.174.82.0' portion you wouldn't be able to tell for certain
+the size of the block.  '140.174.82.0' could be anything from a
+'/23' to a '/32'.  The B<maxblock>() method gives the size of 
+the larges block that the current block's address would allow it
+to be.  The size is given in bits.  Eg: 23.
+
+=item B<enumerate>()
+
+Returns a list of all the IP addresses in the block.  Be very 
+careful not to use this function of large blocks.  The IP
+addresses are returned as strings.  Eg: '140.174.82.0', '140.174.82.1',
+... '140.174.82.255'.
+
+=item B<storeNetblock>([$t])
+
+Adds the current block to an table of network blocks.  The 
+table can be used to query which network block a given IP address
+is in.  
+
+The optional argument allows there to be more than one table.
+By default, an internal table is used.   If more than one table
+is needed, then supply a reference to a HASH to store the 
+data in.
+
+=back
+
+=head1 FUNCTIONS
+
+=over 25
+
+=item B<findNetblock>(ip, [$t])
+
+Search the table of network blocks (created with B<storeNetBlock>) to
+find if any of them contain the given IP address.  The IP address
+is expected to be a string. 
+
+The return value is either a Net::Netblock object or undef.
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (C) 1998, David Muir Sharnoff.   All rights reserved.
+License hearby granted for anyone to use this module at their own risk.   
+Please feed useful changes back to muir@idiom.com.
+

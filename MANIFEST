@@ -1,0 +1,5 @@
+Netmask.pm
+Netmask.pod
+Makefile.PL
+MANIFEST
+t/netmasks.t
