@@ -194,7 +194,7 @@ Since zero is a legal position, the true string "0 " is returned in
 it's place.  "0 " is numerically zero though.  When wanting to know
 the position inside the block, a good idiom is:
 
-  $pos = $block->match($ip) || die;
+  $pos = $block->match($ip) or die;
   $pos += 0;
 
 =item ->B<maxblock>()

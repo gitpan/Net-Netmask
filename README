@@ -153,7 +153,7 @@ METHODS
                              zero though. When wanting to know the position
                              inside the block, a good idiom is:
 
-                               $pos = $block->match($ip) || die;
+                               $pos = $block->match($ip) or die;
                                $pos += 0;
 
     ->maxblock()             Much of the time, it is not possible to

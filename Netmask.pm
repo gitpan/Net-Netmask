@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9011;
+$VERSION = 1.9012;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -309,6 +309,7 @@ sub findNetblock
 			$i--;
 		}
 	}
+	return undef;
 }
 
 sub findOuterNetblock
@@ -339,6 +340,7 @@ sub findOuterNetblock
 			$i--;
 		}
 	}
+	return undef;
 }
 
 sub findAllNetblock

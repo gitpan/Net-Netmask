@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I. -w
 
-print "1..267\n";
+print "1..268\n";
 
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
@@ -527,4 +527,15 @@ print ($dl eq '216.240.33.128/25 216.240.35.0/24' ? "ok $test\n" : "not ok $test
 (@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(216.240.0.0/16 215.0.0.0/16 216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24 216.240.45.0/24))));
 $dl = dlist(@c);
 print ($dl eq '' ? "ok $test\n" : "not ok $test\n"); $test++;
+
+
+my $table77 = {};
+my $block77 = new2 Net::Netmask("10.1.2.0/24", $table77);
+$block77->storeNetblock();
+if(defined(findNetblock("10.2.1.0", $table77))) {
+  print "not ok $test\n";
+} else {
+  print "ok $test\n";
+}
+$test++;
 
