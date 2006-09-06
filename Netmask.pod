@@ -11,7 +11,6 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	$block = new2 Net::Netmask (network block)
 	$block = new2 Net::Netmask (network block, netmask)
 
-
 	print $block;			# a.b.c.d/bits
 	print $block->base() 
 	print $block->mask() 
@@ -23,8 +22,11 @@ Net::Netmask - parse, manipulate and lookup IP network blocks
 	print $block->next()
 	print $block->match($ip);
 	print $block->nth(1, [$bitstep]);
+
 	if ($block->sameblock("network block")) ...
 	if ($block->cmpblocks("network block")) ...
+
+	$newblock = $block->nextblock([count]);
 
 	for $ip ($block->enumerate([$bitstep])) { }
 
@@ -110,7 +112,7 @@ Always a /8 block.
 
 =item '216.240/16'
 
-=item 'default'
+=item 'default' or 'any'
 
 0.0.0.0/0 (the default route)
 
@@ -240,6 +242,13 @@ Examples: the list returned for the block '216.240.32.0/23' would
 be: '32.240.216.in-addr.arpa', 0, 255, '33.240.216.in-addr.arpa', 0, 255.
 The list returned for the block '216.240.32.64/27' would be: 
 '32.240.216.in-addr.arpa', 64, 95.
+
+=item ->B<nextblock>([$count])
+
+Without a $count, return the next block of the same size after the 
+current one.  With a count, return the Nth block after the current one.
+A count of -1 returns the previous block.  Undef will be returned if
+out of legal address space.
 
 =item ->B<sameblock>($block)
 
@@ -427,7 +436,7 @@ blocks will be collapsed.
 
 =head1 LICENSE  
 
-Copyright (C) 1998-2003 David Muir Sharnoff.  License hereby
+Copyright (C) 1998-2006 David Muir Sharnoff.  License hereby
 granted for anyone to use, modify or redistribute this module at 
 their own risk.  Please feed useful changes back to muir@idiom.com.
 

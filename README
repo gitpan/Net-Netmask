@@ -20,8 +20,11 @@ SYNOPSIS
             print $block->next()
             print $block->match($ip);
             print $block->nth(1, [$bitstep]);
+
             if ($block->sameblock("network block")) ...
             if ($block->cmpblocks("network block")) ...
+
+            $newblock = $block->nextblock([count]);
 
             for $ip ($block->enumerate([$bitstep])) { }
 
@@ -85,7 +88,7 @@ CONSTRUCTING
 
     '216.240.32/24'
     '216.240/16'
-    'default'                       0.0.0.0/0 (the default route)
+    'default' or 'any'              0.0.0.0/0 (the default route)
 
     '216.240.32.0#0.0.31.255'       A hostmask (as used by Cisco
                                     access-lists).
@@ -203,6 +206,12 @@ METHODS
                              '33.240.216.in-addr.arpa', 0, 255. The list
                              returned for the block '216.240.32.64/27' would
                              be: '32.240.216.in-addr.arpa', 64, 95.
+
+    ->nextblock([$count])    Without a $count, return the next block of the
+                             same size after the current one. With a count,
+                             return the Nth block after the current one. A
+                             count of -1 returns the previous block. Undef
+                             will be returned if out of legal address space.
 
     ->sameblock($block)      Compares two blocks. The second block will be
                              auto-converted from a string if it isn't
@@ -373,7 +382,7 @@ FUNCTIONS
                              Overlapping blocks will be collapsed.
 
 LICENSE
-    Copyright (C) 1998-2003 David Muir Sharnoff. License hereby granted for
+    Copyright (C) 1998-2006 David Muir Sharnoff. License hereby granted for
     anyone to use, modify or redistribute this module at their own risk.
     Please feed useful changes back to muir@idiom.com.
 

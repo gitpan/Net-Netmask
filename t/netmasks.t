@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I. -w
 
-print "1..268\n";
+print "1..276\n";
 
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
@@ -17,6 +17,7 @@ my @rtests = qw(
  140.174.82			u	140.174.82.0	255.255.255.0	24 23
  140.174			u	140.174.0.0	255.255.0.0	16 15
  10				u	10.0.0.0	255.0.0.0	8  7
+ 10/8				u	10.0.0.0	255.0.0.0	8  7
  209.157.64/19			u	209.157.64.0	255.255.224.0	19 18
  209.157.64.0-209.157.95.255	u	209.157.64.0	255.255.224.0	19 18
  209.157/17			u	209.157.0.0	255.255.128.0	17 16
@@ -538,4 +539,26 @@ if(defined(findNetblock("10.2.1.0", $table77))) {
   print "ok $test\n";
 }
 $test++;
+
+
+{
+	my $b = new Net::Netmask("192.168.0.0/23");
+	my @t = (
+		undef	,  '192.168.2.0/23',   # => would turn undef into "undef"
+		10	=> '192.168.20.0/23',
+		7	=> '192.168.14.0/23',
+		-1	=> '192.167.254.0/23',
+	);
+	while (@t) {
+		my $arg = shift(@t);
+		my $result = shift(@t);
+		if ($b->nextblock($arg)."" eq $result) {
+			print "ok $test\n";
+		} else {
+			print "not ok $test\n";
+		}
+		$test++;
+	}
+}
+
 

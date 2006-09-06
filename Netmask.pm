@@ -2,7 +2,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9012;
+$VERSION = 1.9013;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -93,6 +93,8 @@ sub new
 		($base, $bits) = ("$1.0", $2);
 	} elsif ($net =~ m,^(\d+\.\d+)/(\d+)$,) {
 		($base, $bits) = ("$1.0.0", $2);
+	} elsif ($net =~ m,^(\d+)/(\d+)$,) {
+		($base, $bits) = ("$1.0.0.0", $2);
 	} elsif ($net eq 'default' || $net eq 'any') {
 		($base, $bits) = ("0.0.0.0", 0);
 	} elsif ($net =~ m,^(\d+\.\d+\.\d+\.\d+)\s*-\s*(\d+\.\d+\.\d+\.\d+)$,) {
@@ -414,6 +416,19 @@ sub maxblock
 { 
 	my ($this) = @_;
 	return imaxblock($this->{'IBASE'}, $this->{'BITS'});
+}
+
+sub nextblock
+{
+        my ($this, $index) = @_;
+	$index = 1 unless defined $index;
+	my $newblock = bless {
+		IBASE	=> $this->{IBASE} + $index * (2**(32- $this->{BITS})),
+		BITS	=> $this->{BITS},
+	};
+	return undef if $newblock->{IBASE} >= 2**32;
+	return undef if $newblock->{IBASE} < 0;
+	return $newblock;
 }
 
 sub imaxblock
