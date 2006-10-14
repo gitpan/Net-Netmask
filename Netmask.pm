@@ -1,8 +1,9 @@
+# Copyright (C) 1998-2006, David Muir Sharnoff <muir@idiom.com>
 
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9013;
+$VERSION = 1.9014;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -511,7 +512,7 @@ sub cidrs2cidrs
 sub cidrs2inverse
 {
 	my $outer = shift;
-	$outer = __PACKAGE__->new($outer) unless ref($outer);
+	$outer = __PACKAGE__->new2($outer) || croak($error) unless ref($outer);
 	my (@cidrs) = cidrs2cidrs(@_);
 	my $first = $outer->{IBASE};
 	my $last = $first + $outer->size() -1;
@@ -528,7 +529,7 @@ sub cidrs2inverse
 		$first = $cidrs[0]->{IBASE} + $cidrs[0]->size;
 		shift(@cidrs);
 	}
-	if ($first < $last) {
+	if ($first <= $last) {
 		push(@r, irange2cidrlist($first, $last));
 	}
 	return @r;

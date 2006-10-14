@@ -1,3 +1,9 @@
+
+= 2006/10/13 1.9004
+
+Fix bug # 22085 reported by grjones at gmail: cidrs2inverse
+wouldn't notice /32-sized holes.
+
 = 2006/09/06 1.9013
 
 Added the nextblock() method as suggested by Robert Drake <rdrake at stayonline.net>

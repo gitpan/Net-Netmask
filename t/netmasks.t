@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I. -w
 
-print "1..276\n";
+print "1..277\n";
 
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
@@ -562,3 +562,15 @@ $test++;
 }
 
 
+{
+	my $obj1 = new2 Net::Netmask ('1.0.0.4/31');
+	my $obj2 = new2 Net::Netmask ('1.0.0.4/32');
+	my @leftover = cidrs2inverse($obj1, $obj2);
+	# print "leftover = @leftover\n";
+	if (@leftover == 1 && "$leftover[0]" eq "1.0.0.5/32") {
+		print "ok $test\n";
+	} else {
+		print "not ok $test\n";
+	}
+	$test++;
+}

@@ -1,58 +1,58 @@
 =head1 NAME
 
-Net::Netmask - parse, manipulate and lookup IP network blocks
+ Net::Netmask - parse, manipulate and lookup IP network blocks
 
 =head1 SYNOPSIS
 
-	use Net::Netmask;
+use Net::Netmask;
 
-	$block = new Net::Netmask (network block)
-	$block = new Net::Netmask (network block, netmask)
-	$block = new2 Net::Netmask (network block)
-	$block = new2 Net::Netmask (network block, netmask)
+ $block = new Net::Netmask (network block)
+ $block = new Net::Netmask (network block, netmask)
+ $block = new2 Net::Netmask (network block)
+ $block = new2 Net::Netmask (network block, netmask)
 
-	print $block;			# a.b.c.d/bits
-	print $block->base() 
-	print $block->mask() 
-	print $block->hostmask() 
-	print $block->bits() 
-	print $block->size() 
-	print $block->maxblock()
-	print $block->broadcast()
-	print $block->next()
-	print $block->match($ip);
-	print $block->nth(1, [$bitstep]);
+ print $block;			# a.b.c.d/bits
+ print $block->base() 
+ print $block->mask() 
+ print $block->hostmask() 
+ print $block->bits() 
+ print $block->size() 
+ print $block->maxblock()
+ print $block->broadcast()
+ print $block->next()
+ print $block->match($ip);
+ print $block->nth(1, [$bitstep]);
 
-	if ($block->sameblock("network block")) ...
-	if ($block->cmpblocks("network block")) ...
+ if ($block->sameblock("network block")) ...
+ if ($block->cmpblocks("network block")) ...
 
-	$newblock = $block->nextblock([count]);
+ $newblock = $block->nextblock([count]);
 
-	for $ip ($block->enumerate([$bitstep])) { }
+ for $ip ($block->enumerate([$bitstep])) { }
 
-	for $zone ($block->inaddr()) { }
+ for $zone ($block->inaddr()) { }
 
-	my $table = {};
-	$block->storeNetblock([$table])
-	$block->deleteNetblock([$table])
-	@missingblocks = $block->cidrs2inverse(@blocks)
+ my $table = {};
+ $block->storeNetblock([$table])
+ $block->deleteNetblock([$table])
+ @missingblocks = $block->cidrs2inverse(@blocks)
 
-	$block = findNetblock(ip, [$table])
-	$block = findOuterNetblock(ip, [$table])
-	@blocks = findAllNetblock(ip, [$table])
-	if ($block->checkNetblock([$table]) ...
-	$block2 = $block1->findOuterNetblock([$table])
-	@blocks = dumpNetworkTable([$table])
+ $block = findNetblock(ip, [$table])
+ $block = findOuterNetblock(ip, [$table])
+ @blocks = findAllNetblock(ip, [$table])
+ if ($block->checkNetblock([$table]) ...
+ $block2 = $block1->findOuterNetblock([$table])
+ @blocks = dumpNetworkTable([$table])
 
-	@blocks = range2cidrlist($beginip, $endip);
-	@blocks = cidrs2cidrs(@blocks_with_dups)
+ @blocks = range2cidrlist($beginip, $endip);
+ @blocks = cidrs2cidrs(@blocks_with_dups)
 
-	@listofblocks = cidrs2contiglists(@blocks);
+ @listofblocks = cidrs2contiglists(@blocks);
 
-	@blocks = sort @blocks
-	@blocks = sort_network_blocks(@blocks)
+ @blocks = sort @blocks
+ @blocks = sort_network_blocks(@blocks)
 
-	@sorted_ip_addrs = sort_by_ip_address(@unsorted_ip_addrs)
+ @sorted_ip_addrs = sort_by_ip_address(@unsorted_ip_addrs)
 
 =head1 DESCRIPTION
 
@@ -438,5 +438,10 @@ blocks will be collapsed.
 
 Copyright (C) 1998-2006 David Muir Sharnoff.  License hereby
 granted for anyone to use, modify or redistribute this module at 
-their own risk.  Please feed useful changes back to muir@idiom.com.
+their own risk.  Please feed useful changes back to <muir@idiom.com>.
 
+If you found this module useful, please thank me (the author) by
+giving me a chance to bid to provide your next high-speed Internet
+link.  I run multiple ISPs and can generally save you money and
+provide a top-notch service for your T1s, T3s, OC3s, etc.  Please
+send your request to <muir@idiom.com>.  Thank you.
