@@ -1,5 +1,9 @@
+= 2006/11/30 1.9015
 
-= 2006/10/13 1.9004
+Fix bug # 22662 reported by grjones at gmail: cidrs2inverse
+wouldn't notice /32-sized leftovers.
+
+= 2006/10/13 1.9014
 
 Fix bug # 22085 reported by grjones at gmail: cidrs2inverse
 wouldn't notice /32-sized holes.

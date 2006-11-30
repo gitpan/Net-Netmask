@@ -3,7 +3,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9014;
+$VERSION = 1.9015;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -518,7 +518,7 @@ sub cidrs2inverse
 	my $last = $first + $outer->size() -1;
 	shift(@cidrs) while $cidrs[0] && $cidrs[0]->{IBASE} + $cidrs[0]->size < $first;
 	my @r;
-	while (@cidrs && $first < $last) {
+	while (@cidrs && $first <= $last) {
 		if ($first < $cidrs[0]->{IBASE}) {
 			if ($last <= $cidrs[0]->{IBASE}-1) {
 				return (@r, irange2cidrlist($first, $last));
