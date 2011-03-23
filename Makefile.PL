@@ -8,7 +8,7 @@ WriteMakefile(
 	'VERSION_FROM' => 'Netmask.pm',
 	($] >= 5.005 ?
 	    ('ABSTRACT' => 'Understand and manipulate IP netmaks',
-	     'AUTHOR'	=> 'David Muir Sharnoff <muir@idiom.com>') : ()),
+	     'AUTHOR'	=> 'David Muir Sharnoff <muir@idiom.org>') : ()),
 	'dist'   => {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );
 

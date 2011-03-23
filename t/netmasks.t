@@ -1,11 +1,10 @@
 #!/usr/bin/perl -I. -w
 
-print "1..282\n";
-
 use Net::Netmask;
 use Net::Netmask qw(sameblock cmpblocks);
 use Carp;
 use Carp qw(verbose);
+use Test::More tests => 295;
 
 #  addr			mask		base		newmask	     bits  mb
 my @rtests = qw(
@@ -20,10 +19,12 @@ my @rtests = qw(
  10/8				u	10.0.0.0	255.0.0.0	8  7
  209.157.64/19			u	209.157.64.0	255.255.224.0	19 18
  209.157.64.0-209.157.95.255	u	209.157.64.0	255.255.224.0	19 18
+ 216.140.48.16/32		u	216.140.48.16	255.255.255.255	32 28
  209.157/17			u	209.157.0.0	255.255.128.0	17 16
  default			u	0.0.0.0		0.0.0.0		0  0
 );
 push(@rtests, '209.157.68.22#0.0.31.255', 'u', '209.157.64.0', '255.255.224.0', '19', '18');
+
 
 my @store = qw(
  209.157.64.0/19
@@ -54,129 +55,122 @@ my @lookup2 = qw(
 );
 
 my $debug = 0;
-my $test = 1;
 my $x;
 
 my ($addr, $mask, $base, $newmask, $bits, $max);
 while (($addr, $mask, $base, $newmask, $bits, $max) = splice(@rtests, 0, 6)) {
+
+	print "# $addr $mask $base $newmask $bits $max\n";
+
 	$mask = undef if $mask eq 'u';
 	$x = new Net::Netmask ($addr, $mask);
 
-	printf STDERR "test $test, %s %s: %s %s %d %d\n", 
-		$addr, $mask, $x->base(), $x->mask(), 
-		$x->bits(), $x->maxblock() if $debug;
-	
-	print $x->base() eq $base ? "ok $test\n" : "not ok $test\n"; $test++;
-	print $x->mask() eq $newmask ? "ok $test\n" : "not ok $test\n"; $test++;
-	print $x->maxblock() == $max ? "ok $test\n" : "not ok $test\n"; $test++;
-	print $x->bits() == $bits ? "ok $test\n" : "not ok $test\n"; $test++;
+	is($x->base(), $base, "base of $addr");
+	is($x->mask(), $newmask, "mask of $addr");
+	is($x->maxblock(), $max, "maxblock of $addr");
+	is($x->bits(), $bits, "bits of $addr");
 }
 
 my @y;
 
 $x = new Net::Netmask ('209.157.64.0/19');
-print $x->size() == 8192 ? "ok $test\n" : "not ok $test\n"; $test++;
-
-print $x->hostmask() eq '0.0.31.255' ? "ok $test\n" : "not ok $test\n"; $test++;
+is($x->size(), 8192, "size of 209.157.64.0/19");
+is($x->hostmask(), '0.0.31.255', "hostmask of 209.157.64.0/19");
 
 @y = $x->inaddr();
-print STDERR "REVERSE: @y\n" if $debug;
-print $y[0] eq '64.157.209.in-addr.arpa' 
-	? "ok $test\n" : "not ok $test\n"; $test++;
-print $y[31*3] eq '95.157.209.in-addr.arpa' 
-	? "ok $test\n" : "not ok $test\n"; $test++;
-print defined($y[32*3]) ? "not ok $test\n" : "ok $test\n"; $test++;
+print "# REVERSE: @y\n";
+is ($y[0], '64.157.209.in-addr.arpa');
+is ($y[31*3], '95.157.209.in-addr.arpa');
+ok(! defined($y[32*3]));
 
 $x = new Net::Netmask ('140.174.82.4/32');
-print $x->size() == 1 ? "ok $test\n" : "not ok $test\n"; $test++;
+is($x->size(), 1, "size of 140.174.82.4/32");
 
 # perl bug: cannot just print this.
-my $p = ($x->inaddr())[0] eq '82.174.140.in-addr.arpa' 
-	?  "ok $test\n"
-	: "not ok $test\n";
-print $p;
-printf STDERR "REVERSE$test %s\n", $x->inaddr() if $debug;
-$test++;
+is(($x->inaddr())[0], '82.174.140.in-addr.arpa');
 
 $x = new Net::Netmask ('140.174.82.64/27');
-print (($x->inaddr())[1] == 64 ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($x->inaddr())[2] == 95 ? "ok $test\n" : "not ok $test\n"); $test++;
-@y = $x->inaddr();
-print STDERR "Y$test @y\n" if $debug;
+is(($x->inaddr())[1], 64);
+is(($x->inaddr())[2], 95);
 
 $x = new Net::Netmask ('default');
-print $x->size() == 4294967296 ? "ok $test\n" : "not ok $test\n"; $test++;
+ok($x->size() == 4294967296);
 
 $x = new Net::Netmask ('209.157.64.0/27');
 @y = $x->enumerate();
-print $y[0] eq '209.157.64.0' ? "ok $test\n" : "not ok $test\n"; $test++;
-print $y[31] eq '209.157.64.31' ? "ok $test\n" : "not ok $test\n"; $test++;
-print defined($y[32]) ? "not ok $test\n" : "ok $test\n"; $test++;
+is($y[0], '209.157.64.0');
+is($y[31], '209.157.64.31');
+ok(! defined($y[32]));
 
 $x = new Net::Netmask ('10.2.0.16/19');
 @y = $x->enumerate();
-print $y[0] eq '10.2.0.0' ? "ok $test\n" : "not ok $test\n"; $test++;
-print $y[8191] eq '10.2.31.255' ? "ok $test\n" : "not ok $test\n"; $test++;
-print defined($y[8192]) ? "not ok $test\n" : "ok $test\n"; $test++;
+is($y[0], '10.2.0.0');
+is($y[8191], '10.2.31.255');
+ok(! defined($y[8192]));
 
 my $table = {};
 my $table9 = {};
 
-for my $b (@store) {
-	$x = new Net::Netmask ($b);
-	$x->storeNetblock();
+{
+	for my $b (@store) {
+		$x = new Net::Netmask ($b);
+		$x->storeNetblock();
+	}
 }
 
-for my $b (@store2) {
-	$x = new Net::Netmask ($b);
-	$x->storeNetblock($table);
-	$x->storeNetblock($table9);
+{
+	for my $b (@store2) {
+		$x = new Net::Netmask ($b);
+		$x->storeNetblock($table);
+		$x->storeNetblock($table9);
+	}
 }
 
 my $result;
 while (($addr, $result) = splice(@lookup, 0, 2)) {
 	my $nb = findNetblock($addr);
-	printf STDERR "lookup(%s): %s, wanting %s.\n",
-		$addr, $nb->desc(), $result if $debug;
-	print $nb->desc() eq $result ? "ok $test\n" : "not ok $test\n"; $test++;
+	printf "# lookup(%s): %s, wanting %s.\n", $addr, $nb->desc(), $result;
+	is($nb->desc(), $result, "$addr / $result");
 }
 
 while (($addr, $result) = splice(@lookup2, 0, 2)) {
 	my $nb = findNetblock($addr, $table);
-	printf STDERR "lookup(%s): %s, wanting %s.\n",
-		$addr, $nb->desc(), $result if $debug;
-	print $nb->desc() eq $result ? "ok $test\n" : "not ok $test\n"; $test++;
+	printf "# lookup(%s): %s, wanting %s.\n",
+		$addr, $nb->desc(), $result;
+	is($nb->desc(), $result, "$addr / $result");
 }
 
 
 $newmask = Net::Netmask->new("192.168.1.0/24");
-print (($newmask->broadcast() eq "192.168.1.255") ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->next() eq "192.168.2.0") ? "ok $test\n" : "not ok $test\n"); $test++;
-print ($newmask->match("192.168.0.255") ? "not ok $test\n" : "ok $test\n"); $test++;
-print ($newmask->match("192.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
-print ($newmask->match("10.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
-print ($newmask->match("209.168.2.0") ? "not ok $test\n" : "ok $test\n"); $test++;
-print ($newmask->match("192.168.1.0") ? "ok $test\n" : "not ok $test\n"); $test++;
-print ($newmask->match("192.168.1.255") ? "ok $test\n" : "not ok $test\n"); $test++;
-print ($newmask->match("192.168.1.63") ? "ok $test\n" : "not ok $test\n"); $test++;
+is($newmask->broadcast(), "192.168.1.255");
+is($newmask->next(), "192.168.2.0");
+ok($newmask->match("192.168.1.0"));
+ok($newmask->match("192.168.1.255"));
+ok($newmask->match("192.168.1.63"));
 
-print (($newmask->nth(1) eq '192.168.1.1') ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->nth(-1) eq '192.168.1.255') ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->nth(-2) eq '192.168.1.254') ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->nth(0) eq '192.168.1.0') ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->match('192.168.1.1') == 1) ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->match('192.168.1.100') == 100) ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->match('192.168.1.255') == 255) ? "ok $test\n" : "not ok $test\n"); $test++;
+ok(! $newmask->match("192.168.0.255"));
+ok(! $newmask->match("192.168.2.0"));
+ok(! $newmask->match("10.168.2.0"));
+ok(! $newmask->match("209.168.2.0"));
 
-print (($newmask->match('192.168.2.1') == 0) ? "ok $test\n" : "not ok $test\n"); $test++;
-print (!($newmask->match('192.168.2.1')) ? "ok $test\n" : "not ok $test\n"); $test++;
-print (((0+$newmask->match('192.168.1.0')) == 0) ? "ok $test\n" : "not ok $test\n"); $test++;
-print (($newmask->match('192.168.1.0')) ? "ok $test\n" : "not ok $test\n"); $test++;
+is($newmask->nth(1),'192.168.1.1');
+is($newmask->nth(-1),'192.168.1.255');
+is($newmask->nth(-2),'192.168.1.254');
+is($newmask->nth(0),'192.168.1.0');
+
+ok($newmask->match('192.168.1.1') == 1);
+ok($newmask->match('192.168.1.100') == 100);
+ok($newmask->match('192.168.1.255') == 255);
+
+ok(($newmask->match('192.168.2.1') == 0));
+ok(!($newmask->match('192.168.2.1')));
+ok(((0+$newmask->match('192.168.1.0')) == 0));
+ok(($newmask->match('192.168.1.0')));
 
 my $bks;
 $block = new Net::Netmask '209.157.64.1/32';
 $block->storeNetblock($bks);
-print findNetblock('209.157.64.1',$bks) ? "ok $test\n" : "not ok $test\n"; $test++;
+ok(findNetblock('209.157.64.1',$bks));
 
 
 my @store3 = qw(
@@ -231,40 +225,37 @@ sub lookeq
 	my ($table, $value, $result) = @_;
 	my $found = findNetblock($value, $table);
 	if ($result) {
-#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
-		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+		is($found->desc, $result, "value='$value' found=@{[$found->desc]}");
 	} else {
-		print ($found ? "not ok $test\n" : "ok $test\n");
+		ok(! $found, $value);
 	}
-	$test++;
 }
 sub fdel
 {
 	my ($value, $result, $table) = @_;
 	my $found = findNetblock($value, $table);
 #print "search for $value, found and deleting @{[ $found->desc ]} eq $result\n";
-	print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+	is($found->desc, $result, "$value / $result");
 	$found->deleteNetblock($table);
-	$test++;
 }
 
 my (@c) = range2cidrlist("66.33.85.239", "66.33.85.240");
 my $dl = dlist(@c);
-print ($dl eq '66.33.85.239/32 66.33.85.240/32' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok($dl eq '66.33.85.239/32 66.33.85.240/32');
 
 (@c) = range2cidrlist('216.240.32.128', '216.240.36.127');
 $dl = dlist(@c);
-print ($dl eq '216.240.32.128/25 216.240.33.0/24 216.240.34.0/23 216.240.36.0/25' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok($dl eq '216.240.32.128/25 216.240.33.0/24 216.240.34.0/23 216.240.36.0/25');
 
 my @d;
 @d = (@c[0,1,3]);
 
 my (@e) = cidrs2contiglists(@d);
 
-print (@e == 2 ? "ok $test\n" : "not ok $test\n"); $test++;
+ok(@e == 2);
 
-print (dlist(@{$e[0]}) eq '216.240.32.128/25 216.240.33.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
-print (dlist(@{$e[1]}) eq '216.240.36.0/25' ? "ok $test\n" : "not ok $test\n"); $test++;
+is(dlist(@{$e[0]}), '216.240.32.128/25 216.240.33.0/24');
+is(dlist(@{$e[1]}), '216.240.36.0/25');
 
 sub dlist 
 {
@@ -308,59 +299,53 @@ my (@sorted1) = sort_by_ip_address(@iplist);
 my (@blist) = map { new Net::Netmask $_ } @iplist;
 my (@clist) = sort @blist;
 my (@sorted2) = map { $_->base() } @clist;
-
-if ($] < 5.006_001) {
-	print "ok $test # skip Overload not supported at $[\n"; $test++;
-} else {
-	print ("@sorted1" eq "@sorted2" ? "ok $test\n" : "not ok $test\n"); $test++;
-}
-
 my (@dlist) = sort @blist;
 my (@sorted3) = map { $_->base() } @dlist;
 
-if ($] < 5.006_001) {
-	print "ok $test # skip Overload not supported at $[\n"; $test++;
-} else {
-	print "# AT TEST $test\n";
-	print ("@sorted1" eq "@sorted3" ? "ok $test\n" : "not ok $test\n"); $test++;
+SKIP: {
+	skip 2 if $] < 5.006_001;
+	is("@sorted1", "@sorted2");
+	is("@sorted1", "@sorted3");
 }
 
 my $q144 = new Net::Netmask '216.240.32.0/25';
 
 for my $i (qw(216.240.32.0/24 216.240.32.0/26 216.240.33.0/25)) {
 	my $q144p = new Net::Netmask $i;
-	print ($q144 eq $q144p ? "not ok $test\n" : "ok $test\n"); $test++;
-	print ($q144 == $q144p ? "not ok $test\n" : "ok $test\n"); $test++;
-	print (sameblock($q144, $i) ? "not ok $test\n" : "ok $test\n"); $test++;
-	print (cmpblocks($q144, $i) ? "ok $test\n" : "not ok $test\n"); $test++;
-	print ($q144->sameblock($i) ? "not ok $test\n" : "ok $test\n"); $test++;
-	print ($q144->cmpblocks($i) ? "ok $test\n" : "not ok $test\n"); $test++;
+
+	print "# working on $i\n";
+	ok (! ($q144 eq $q144p));
+	ok (! ($q144 == $q144p));
+	ok (! (sameblock($q144, $i)));
+	ok (! ($q144->sameblock($i)));
+	ok (cmpblocks($q144, $i));
+	ok ($q144->cmpblocks($i));
 }
 
 my $q144pp = new Net::Netmask '216.240.32.0/25'; 
-print ($q144 == $q144pp ? "ok $test\n" : "not ok $test\n"); $test++;
-print ($q144 eq $q144pp ? "ok $test\n" : "not ok $test\n"); $test++;
-print (sameblock($q144, '216.240.32.0/25') ? "ok $test\n" : "not ok $test\n"); $test++;
-print (cmpblocks($q144, '216.240.32.0/25') ? "not ok $test\n" : "ok $test\n"); $test++;
-print ($q144->sameblock('216.240.32.0/25') ? "ok $test\n" : "not ok $test\n"); $test++;
-print ($q144->cmpblocks('216.240.32.0/25') ? "not ok $test\n" : "ok $test\n"); $test++;
+ok (($q144 == $q144pp));
+ok (($q144 eq $q144pp));
+ok (($q144->desc eq "$q144"));
+ok ($q144->sameblock('216.240.32.0/25'));
+ok (sameblock($q144, '216.240.32.0/25'));
 
-print ($q144->desc eq "$q144" ? "ok $test\n" : "not ok $test\n"); $test++;
+ok (! (cmpblocks($q144, '216.240.32.0/25')));
+ok (! ($q144->cmpblocks('216.240.32.0/25')));
+
+
 
 my $dnts = join(' ',dumpNetworkTable($table9));
-print ($dnts eq '0.0.0.0/0 209.157.64.0/19 209.157.80.0/24 209.157.81.16/28' ? "ok $test\n" : "not ok $test\n"); $test++;
+is($dnts, '0.0.0.0/0 209.157.64.0/19 209.157.80.0/24 209.157.81.16/28');
 
 sub lookouter
 {
 	my ($table, $value, $result) = @_;
 	my $found = findOuterNetblock($value, $table);
 	if ($result) {
-#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
-		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+		is($found->desc, $result, "value = $value, result = $result");
 	} else {
-		print ($found ? "not ok $test\n" : "ok $test\n");
+		ok(! $found, "value = $value");
 	}
-	$test++;
 }
 
 # 216.240.32.0/19
@@ -405,12 +390,10 @@ sub lookouterO
 	my $block = new2 Net::Netmask $value;
 	my $found = findOuterNetblock($block, $table);
 	if ($result) {
-#printf "value = $value eresult = $result found = @{[$found->desc]}\n";
-		print (($found->desc eq $result) ? "ok $test\n" : "not ok $test\n");
+		is($found->desc, $result, "value = $value");
 	} else {
-		print ($found ? "not ok $test\n" : "ok $test\n");
+		ok(! $found);
 	}
-	$test++;
 }
 
 lookouterO($table7, "216.240.40.5/30", "216.240.32.0/19");
@@ -449,10 +432,10 @@ sub ctest
 	my $b = new Net::Netmask shift;
 
 	print "# ctest($a, $b)\n";
-	print ($a->contains($a) ? "ok $test\n" : "not ok $test\n"); $test++;
-	print ($b->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
-	print ($a->contains($b) ? "ok $test\n" : "not ok $test\n"); $test++;
-	print (($a->sameblock($b) || ! $b->contains($a)) ? "ok $test\n" : "not ok $test\n"); $test++;
+	ok($a->contains($a));
+	ok($b->contains($b));
+	ok($a->contains($b));
+	ok(($a->sameblock($b) || ! $b->contains($a)));
 }
 
 sub ctestno
@@ -461,8 +444,8 @@ sub ctestno
 	my $b = new Net::Netmask shift;
 
 	print "# ctestno($a, $b)\n";
-	print ($a->contains($b) ? "not ok $test\n" : "ok $test\n"); $test++;
-	print ($b->contains($a) ? "not ok $test\n" : "ok $test\n"); $test++;
+	ok (! $a->contains($b));
+	ok (! $b->contains($a));
 }
 
 ctest("10.20.30.0/24", "10.20.30.0/25");
@@ -486,23 +469,23 @@ sub multinew
 
 (@c) = cidrs2cidrs(multinew(qw(216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24)));
 $dl = dlist(@c);
-print ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24');
 
 (@c) = cidrs2cidrs(multinew(qw(216.240.32.0/32 216.240.32.1/32 216.240.32.2/32 216.240.32.3/32 216.240.32.4/32)));
 $dl = dlist(@c);
-print ($dl eq '216.240.32.0/30 216.240.32.4/32' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '216.240.32.0/30 216.240.32.4/32');
 
 
 (@c) = cidrs2cidrs(multinew(qw(216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24)));
 $dl = dlist(@c);
-print ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '216.240.32.0/24 216.240.33.0/25 216.240.34.0/24');
 
 
 my $block = new Net::Netmask ('172.2.4.0', '255.255.255.0');
 $table = {};
 $block->storeNetblock($table);
 @b = findAllNetblock('172.2.4.1', $table);
-print $#b == 0 ? "ok $test\n" : "not ok $test\n"; $test++;
+ok( $#b == 0 );
 
 $block->tag('a', 'b');
 $block->tag('b', 'c');
@@ -511,34 +494,29 @@ $block->tag('c', undef);
 $block->tag('d', 'x');
 $block->tag('d');
 
-print $block->tag('a') eq 'b' ? "ok $test\n" : "not ok $test\n"; $test++;
-print $block->tag('b') eq 'c' ? "ok $test\n" : "not ok $test\n"; $test++;
-print(!defined($block->tag('c')) ? "ok $test\n" : "not ok $test\n"); $test++;
-print $block->tag('d') eq 'x' ? "ok $test\n" : "not ok $test\n"; $test++;
-print $block->tag('a') eq 'b' ? "ok $test\n" : "not ok $test\n"; $test++;
+ok( $block->tag('a') eq 'b');
+ok( $block->tag('b') eq 'c');
+ok( !defined($block->tag('c')));
+ok( $block->tag('d') eq 'x');
+ok( $block->tag('a') eq 'b');
 
 (@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24))));
 $dl = dlist(@c);
-print ($dl eq '216.240.33.128/25 216.240.35.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '216.240.33.128/25 216.240.35.0/24');
 
 (@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(215.0.0.0/16 216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24 216.240.45.0/24))));
 $dl = dlist(@c);
-print ($dl eq '216.240.33.128/25 216.240.35.0/24' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '216.240.33.128/25 216.240.35.0/24');
 
 (@c) = cidrs2inverse('216.240.32.0/22', (multinew(qw(216.240.0.0/16 215.0.0.0/16 216.240.32.64/28 216.240.32.0/25 216.240.32.128/25 216.240.33.0/25 216.240.34.0/24 216.240.45.0/24))));
 $dl = dlist(@c);
-print ($dl eq '' ? "ok $test\n" : "not ok $test\n"); $test++;
+ok ($dl eq '');
 
 
 my $table77 = {};
 my $block77 = new2 Net::Netmask("10.1.2.0/24", $table77);
 $block77->storeNetblock();
-if(defined(findNetblock("10.2.1.0", $table77))) {
-  print "not ok $test\n";
-} else {
-  print "ok $test\n";
-}
-$test++;
+ok(! defined(findNetblock("10.2.1.0", $table77)));
 
 
 {
@@ -552,12 +530,7 @@ $test++;
 	while (@t) {
 		my $arg = shift(@t);
 		my $result = shift(@t);
-		if ($b->nextblock($arg)."" eq $result) {
-			print "ok $test\n";
-		} else {
-			print "not ok $test\n";
-		}
-		$test++;
+		is($b->nextblock($arg)."", $result, "$result");
 	}
 }
 
@@ -567,70 +540,61 @@ $test++;
 	my $obj2 = new2 Net::Netmask ('1.0.0.4/32');
 	my @leftover = cidrs2inverse($obj1, $obj2);
 	# print "leftover = @leftover\n";
-	if (@leftover == 1 && "$leftover[0]" eq "1.0.0.5/32") {
-		print "ok $test\n";
-	} else {
-		print "not ok $test\n";
-	}
-	$test++;
+	ok(@leftover == 1);
+	ok("$leftover[0]" eq "1.0.0.5/32");
 }
 
 {
 	my $obj1 = new2 Net::Netmask ('1.0.0.4/32');
 	my $obj2 = new2 Net::Netmask ('1.0.0.0/8');
 	my @leftover = cidrs2inverse($obj1, $obj2);
-	if (@leftover) {
-		print "not ok $test # leftover = @leftover\n";
-	} else {
-		print "ok $test\n";
-	}
-	$test++;
+	ok(! @leftover, "@leftover");
 }
 
 {
 	my $obj1 = new2 Net::Netmask ('1.0.0.4/32');
 	my $obj2 = new2 Net::Netmask ('1.0.0.4/32');
 	my @leftover = cidrs2inverse($obj1, $obj2);
-	if (@leftover) {
-		print "not ok $test # leftover2 = @leftover\n";
-	} else {
-		print "ok $test\n";
-	}
-	$test++;
+	ok(! @leftover, "@leftover");
 }
 
 {
 	my $obj1 = new2 Net::Netmask ('1.0.0.4/32');
 	my $obj2 = new2 Net::Netmask ('1.0.0.6/32');
 	my @leftover = cidrs2inverse($obj1, $obj2);
-	if (@leftover == 1 && "$leftover[0]" eq '1.0.0.4/32') {
-		print "ok $test\n";
-	} else {
-		print "not ok $test # leftover3 = @leftover\n";
-	}
-	$test++;
+	ok(@leftover == 1);
+	ok("$leftover[0]" eq '1.0.0.4/32');
 }
 
 {
 	my $obj1 = new2 Net::Netmask ('1.0.0.4/31');
 	my $obj2 = new2 Net::Netmask ('1.0.0.5/32');
 	my @leftover = cidrs2inverse($obj1, $obj2);
-	if (@leftover == 1 && "$leftover[0]" eq '1.0.0.4/32') {
-		print "ok $test\n";
-	} else {
-		print "not ok $test # leftover3 = @leftover\n";
-	}
-	$test++;
+	ok(@leftover == 1);
+	ok("$leftover[0]" eq '1.0.0.4/32');
 }
 
 {
 	my $obj1 = new2 Net::Netmask ('1.0.0.4/31');
 	my $obj2 = new2 Net::Netmask ('1.0.0.4/32');
 	my @leftover = cidrs2inverse($obj1, $obj2);
-	if (@leftover == 1 && "$leftover[0]" eq '1.0.0.5/32') {
-		print "ok $test\n";
-	} else {
-		print "not ok $test # leftover3 = @leftover\n";
-	}
-	$test++;
+	ok(@leftover == 1);
+	ok("$leftover[0]" eq '1.0.0.5/32');
 }
+
+{
+	my $obj1 = new2 Net::Netmask ('217.173.192.0/21');
+	my $obj2 = new2 Net::Netmask ('217.173.200.0/21');
+	is("$obj1", '217.173.192.0/21');
+	is("$obj2", '217.173.200.0/21');
+	ok(! $obj1->contains($obj2));
+	ok(! $obj2->contains($obj1));
+}
+
+{
+	my $warnings = '';
+	local($SIG{__WARN__}) = sub { $warnings = $_[0] };
+	my $block = findNetblock("127.0.0.", { 1 => []});
+	is($warnings, '');
+}
+
