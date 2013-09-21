@@ -3,7 +3,7 @@
 package Net::Netmask;
 
 use vars qw($VERSION);
-$VERSION = 1.9016;
+$VERSION = 1.9017;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -589,6 +589,32 @@ sub sort_by_ip_address
 		sort { $a->[1] cmp $b->[1] }
 		map [ $_, pack("C4",split(/\./,$_)) ], @_;
 
+}
+
+
+sub split
+{
+	my ($self , $parts) = @_;
+
+	my $num_ips = $self->size;
+
+	confess "Parts must be defined and greater than 0."
+		unless defined( $parts ) && $parts > 0;
+
+	confess "Netmask only contains $num_ips IPs. Cannot split into $parts."
+		unless $num_ips >= $parts; 
+      
+	my $log2 = log($parts) / log(2);
+      
+	confess "Parts count must be a number of base 2. Got: $parts"
+		unless floor($log2) == $log2;
+
+	my $new_mask = $self->bits + $log2;
+      
+	return 
+		map { Net::Netmask->new( $_ . "/" .  $new_mask ) }
+			map { $self->nth( ( $num_ips / $parts ) * $_ ) } 
+				( 0 .. ( $parts - 1 ) );
 }
 
 BEGIN {
